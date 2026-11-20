@@ -59,7 +59,7 @@ export function ListCard({ list }: { list: ListSummary }) {
         </Link>
       </h3>
       <Tags list={list} />
-      <p className="mt-3 mb-3.5 text-xs leading-normal text-muted">{listDescription(list)}</p>
+      <p className="mt-3 mb-3.5 text-sm leading-normal text-fg">{listDescription(list)}</p>
       <div className="mt-auto flex flex-col gap-2">
         <ProgressBar value={progress(list)} />
         <Counts list={list} />
