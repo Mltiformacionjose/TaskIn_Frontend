@@ -114,7 +114,8 @@ test("en una lista compartida se asignan responsables entre los participantes", 
   await memberPage.goto(`/lists/${list.id}`);
   const row = taskRows(memberPage).filter({ hasText: "Repartir trabajo" });
   await expect(row.getByText(member.username)).toBeAttached();
-  await expect(memberPage.getByText(owner.username).first()).toBeVisible();
+  const participants = memberPage.locator("section", { has: memberPage.getByRole("heading", { name: "Participantes" }) });
+  await expect(participants.getByText(owner.username)).toBeVisible();
   await memberPage.close();
 });
 
