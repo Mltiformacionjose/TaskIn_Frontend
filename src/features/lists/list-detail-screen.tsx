@@ -16,9 +16,10 @@ import { useSession } from "@/features/auth/session-provider";
 import { STATUS_ORDER, TASK_STATUS } from "@/features/tasks/status";
 import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
-import { deleteList, getList, getMembers } from "@/services/lists";
+import { deleteList, getList, getMembers, leaveList } from "@/services/lists";
 import { getTasks } from "@/services/tasks";
 import type { ListMember, Task, TaskList, TaskStatus } from "@/types/api";
+import { EditListDialog } from "./edit-list-dialog";
 import { LIST_TYPE_LABEL, plural } from "./list-summary";
 
 type StatusFilter = "all" | TaskStatus;
@@ -100,6 +101,22 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                     <ButtonLink href={`/lists/${list.id}/participants`} variant="secondary">
                       ＋ Invitar
                     </ButtonLink>
+                  )}
+                  {isOwner && <EditListDialog list={list} onSaved={() => refresh()} />}
+                  {shared && !isOwner && (
+                    <ConfirmButton
+                      label="Abandonar lista"
+                      title="¿Abandonar esta lista?"
+                      confirmLabel="Abandonar lista"
+                      pendingLabel="Saliendo…"
+                      onConfirm={async () => {
+                        await leaveList(list.id);
+                        router.push("/lists");
+                      }}
+                    >
+                      Dejarás de ver «{list.name}» y de ser responsable de sus tareas. Las tareas se quedan en la lista.
+                      Para volver, el propietario tendrá que invitarte de nuevo.
+                    </ConfirmButton>
                   )}
                   {isOwner && !list.is_default && (
                     <ConfirmButton
@@ -234,7 +251,7 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                   </p>
                   <p className="mt-3 text-xs leading-normal text-muted">
                     {shared
-                      ? "Solo el propietario gestiona participantes. Cualquier participante puede crear, editar y eliminar tareas."
+                      ? "Solo el propietario gestiona participantes y puede transferir la lista. Cualquier participante puede crear, editar y eliminar tareas, y abandonar la lista."
                       : list.is_default
                         ? "«Mis tareas» es tu lista personal por defecto y no se puede eliminar."
                         : "Lista personal: solo la ves tú y sus tareas no tienen responsables."}
