@@ -15,6 +15,9 @@
 // PROPUESTA: si el contrato cambia, hay que ajustar este script.
 
 const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+// El backend exige Origin = FRONTEND_ORIGIN en POST, PATCH y DELETE (CSRF, AT-04).
+// El navegador lo envía solo; aquí hay que ponerlo a mano.
+const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 const run = Date.now().toString(36);
 const password = "smoke-password-1234";
 
@@ -25,6 +28,7 @@ async function call(method, path, body) {
   const response = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
+      Origin: ORIGIN,
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(cookie ? { Cookie: cookie } : {}),
     },
