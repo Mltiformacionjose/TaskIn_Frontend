@@ -14,15 +14,16 @@ import { Pill } from "@/components/ui/pill";
 import { Segmented } from "@/components/ui/segmented";
 import { useSession } from "@/features/auth/session-provider";
 import { STATUS_ORDER, TASK_STATUS } from "@/features/tasks/status";
+import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
-import { formatShortDate, isOverdue } from "@/lib/dates";
-import { errorMessage } from "@/services/errors";
 import { deleteList, getList, getMembers } from "@/services/lists";
-import { getTasks, updateTask } from "@/services/tasks";
+import { getTasks } from "@/services/tasks";
 import type { ListMember, Task, TaskList, TaskStatus } from "@/types/api";
 import { LIST_TYPE_LABEL, plural } from "./list-summary";
 
 type StatusFilter = "all" | TaskStatus;
+/** Filtro por responsable: todas, sin responsable o el id de un miembro. */
+type AssigneeFilter = "all" | "none" | number;
 type Data = { list: TaskList; members: ListMember[]; all: Task[] };
 
 function initials(name: string) {
@@ -39,130 +40,19 @@ function Stat({ label, value, hint }: { label: string; value: number; hint: stri
   );
 }
 
-/** Selector de estado en la fila: cambia el estado sin abrir la tarea (RF-22). */
-function StatusSelect({ task, onChanged }: { task: Task; onChanged: (error?: string) => void }) {
-  const [pending, setPending] = useState(false);
-  return (
-    <select
-      aria-label={`Estado de «${task.title}»`}
-      value={task.status}
-      disabled={pending}
-      onChange={async (e) => {
-        setPending(true);
-        try {
-          await updateTask(task.id, { status: e.target.value as TaskStatus });
-          onChanged();
-        } catch (error) {
-          onChanged(errorMessage(error));
-        } finally {
-          setPending(false);
-        }
-      }}
-      className="rounded-full border border-line bg-chip px-2.5 py-1.5 text-xs text-fg outline-none focus-visible:border-accent"
-    >
-      {STATUS_ORDER.map((s) => (
-        <option key={s} value={s}>
-          {TASK_STATUS[s].label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function TaskTable({
-  tasks,
-  members,
-  shared,
-  onChanged,
-}: {
-  tasks: Task[];
-  members: ListMember[];
-  shared: boolean;
-  onChanged: (error?: string) => void;
-}) {
-  const name = (id: number) => members.find((m) => m.user_id === id)?.username ?? "?";
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-sm">
-        <thead className="text-xs text-muted">
-          <tr className="border-b border-line text-left">
-            <th scope="col" className="pb-2.5 font-normal">
-              TAREA
-            </th>
-            {shared && (
-              <th scope="col" className="pb-2.5 font-normal">
-                RESPONSABLES
-              </th>
-            )}
-            <th scope="col" className="pb-2.5 font-normal">
-              VENCE
-            </th>
-            <th scope="col" className="pb-2.5 font-normal">
-              ESTADO
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((task) => {
-            const overdue = isOverdue(task.due_date, task.status);
-            return (
-              <tr key={task.id} className="border-b border-line last:border-b-0">
-                <td className="py-3 pr-3">
-                  <Link href={`/lists/${task.list_id}/tasks/${task.id}`} className="font-semibold hover:underline">
-                    {task.title}
-                  </Link>
-                </td>
-                {shared && (
-                  <td className="py-3 pr-3">
-                    {task.assignee_ids.length === 0 ? (
-                      <span className="text-muted">Sin responsable</span>
-                    ) : (
-                      <span className="flex flex-wrap gap-1">
-                        {task.assignee_ids.map((id) => (
-                          <span
-                            key={id}
-                            title={name(id)}
-                            className="grid h-7 min-w-7 place-items-center rounded-full bg-chip px-1.5 text-xs font-bold"
-                          >
-                            <span aria-hidden="true">{initials(name(id))}</span>
-                            <span className="sr-only">{name(id)}</span>
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </td>
-                )}
-                <td className="py-3 pr-3 whitespace-nowrap">
-                  {task.due_date ? (
-                    <span className={overdue ? "text-danger-text" : undefined}>
-                      {formatShortDate(task.due_date)}
-                      {overdue && " · Vencida"}
-                    </span>
-                  ) : (
-                    <span className="text-muted">Sin fecha</span>
-                  )}
-                </td>
-                <td className="py-3">
-                  <StatusSelect task={task} onChanged={onChanged} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /**
  * WF-003 Detalle de lista (RF-21, RF-23, RF-24): resumen, tareas filtradas por
- * estado y ordenadas por fecha (P-14), participantes y datos de la lista. El
- * propietario puede gestionar participantes y eliminar la lista (RF-17).
+ * estado (en la API) y por responsable (en el navegador), ordenadas por fecha
+ * (P-14) y vistas como Lista, Calendario (WF-011) o Kanban (WF-012);
+ * participantes y datos de la lista. El propietario puede gestionar
+ * participantes y eliminar la lista (RF-17).
  */
 export function ListDetailScreen({ listId }: { listId: number }) {
   const { user } = useSession();
   const router = useRouter();
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [assignee, setAssignee] = useState<AssigneeFilter>("all");
+  const [view, setView] = useState<TaskView>("list");
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { load, reload } = useLoad<Data>(
@@ -248,28 +138,61 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                 description="Ordenadas por fecha de vencimiento; las que no tienen fecha, al final."
                 actions={<ButtonLink href={`/lists/${list.id}/tasks/new`}>＋ Nueva tarea</ButtonLink>}
               >
-                <Segmented
-                  label="Filtrar por estado"
-                  value={filter}
-                  onChange={setFilter}
-                  className="mb-4"
-                  options={[
-                    { value: "all", label: "Todas" },
-                    ...STATUS_ORDER.map((s) => ({ value: s, label: TASK_STATUS[s].label })),
-                  ]}
-                />
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <Segmented label="Vista de las tareas" value={view} onChange={setView} options={VIEW_OPTIONS} />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Segmented
+                      label="Filtrar por estado"
+                      value={filter}
+                      onChange={setFilter}
+                      options={[
+                        { value: "all", label: "Todas" },
+                        ...STATUS_ORDER.map((s) => ({ value: s, label: TASK_STATUS[s].label })),
+                      ]}
+                    />
+                    {shared && (
+                      <select
+                        aria-label="Filtrar por responsable"
+                        value={String(assignee)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setAssignee(v === "all" || v === "none" ? v : Number(v));
+                        }}
+                        className="rounded-[9px] border border-line bg-panel-2 px-2.5 py-2 text-xs text-fg outline-none focus-visible:border-accent"
+                      >
+                        <option value="all">Responsable: todos</option>
+                        <option value="none">Sin responsable</option>
+                        {members.map((m) => (
+                          <option key={m.user_id} value={m.user_id}>
+                            {m.user_id === user.id ? `${m.username} (tú)` : m.username}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
                 <LoadState load={filtered.load} loading="Cargando tareas…" onRetry={filtered.reload}>
-                  {(tasks) =>
-                    tasks.length === 0 ? (
-                      <p className="rounded-panel border border-dashed border-line p-6 text-center text-sm text-muted">
-                        {filter === "all"
-                          ? "Esta lista aún no tiene tareas. Crea la primera con «Nueva tarea»."
-                          : "No hay tareas con este estado."}
-                      </p>
-                    ) : (
-                      <TaskTable tasks={tasks} members={members} shared={shared} onChanged={refresh} />
-                    )
-                  }
+                  {(loaded) => {
+                    const tasks = loaded.filter((t) =>
+                      assignee === "all"
+                        ? true
+                        : assignee === "none"
+                          ? t.assignee_ids.length === 0
+                          : t.assignee_ids.includes(assignee),
+                    );
+                    if (tasks.length === 0 && view !== "calendar") {
+                      return (
+                        <p className="rounded-panel border border-dashed border-line p-6 text-center text-sm text-muted">
+                          {loaded.length === 0 && filter === "all"
+                            ? "Esta lista aún no tiene tareas. Crea la primera con «Nueva tarea»."
+                            : "No hay tareas con estos filtros."}
+                        </p>
+                      );
+                    }
+                    return (
+                      <TaskViews view={view} tasks={tasks} members={shared ? members : undefined} onChanged={refresh} />
+                    );
+                  }}
                 </LoadState>
               </Panel>
 
