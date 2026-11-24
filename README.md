@@ -2,7 +2,7 @@
 
 TaskIn es una aplicación web de gestión de tareas y listas personales y compartidas: permite crear y organizar tareas, compartir listas con otras personas, recibir avisos y ver un resumen del trabajo. Este repositorio contiene el **frontend**, la interfaz de usuario. El backend vive en otro repositorio.
 
-> **Estado real (2026-11-24):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Deseables hechos: vistas Lista, Calendario y Kanban (WF-011, WF-012) en el detalle de lista y en el panel «Mis tareas» del dashboard, y filtro por responsable. Pruebas de extremo a extremo con Playwright: 37 en verde.
+> **Estado real (2026-11-24):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Deseables hechos: vistas Lista, Calendario y Kanban (WF-011, WF-012) en el detalle de lista y en el panel «Mis tareas» del dashboard, filtro por responsable, editar y compartir listas, abandonar y transferir listas, cambiar usuario, correo y contraseña, y aviso de edición simultánea. Pruebas de extremo a extremo con Playwright: 45 en verde.
 
 ## Probar las pantallas
 
@@ -60,7 +60,7 @@ npm run smoke:api   # escenarios contra la API real (requiere backend)
 npm run test:e2e    # pruebas de extremo a extremo con Playwright
 ```
 
-A 2026-11-24 pasan lint, tipos, build y las 37 pruebas E2E.
+A 2026-11-24 pasan lint, tipos, build y las 45 pruebas E2E.
 
 ### Pruebas de extremo a extremo (Playwright)
 
