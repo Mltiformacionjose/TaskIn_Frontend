@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Alert } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { LoadState } from "@/components/ui/load-state";
 import { Panel } from "@/components/ui/panel";
 import { Pill } from "@/components/ui/pill";
+import { Segmented } from "@/components/ui/segmented";
 import { useSession } from "@/features/auth/session-provider";
 import { LIST_TYPE_LABEL, plural } from "@/features/lists/list-summary";
 import { TASK_STATUS } from "@/features/tasks/status";
+import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
 import { formatShortDate } from "@/lib/dates";
 import { getDashboard } from "@/services/dashboard";
 import { getLists } from "@/services/lists";
-import type { Dashboard, DashboardTask, ListSummary, StatusCounts } from "@/types/api";
+import { getMyTasks } from "@/services/tasks";
+import type { Dashboard, DashboardTask, ListSummary, MyTasksScope, StatusCounts } from "@/types/api";
 
 type Data = { dashboard: Dashboard; lists: ListSummary[] };
 
@@ -71,6 +76,56 @@ function Summary({ label, counts }: { label: string; counts: StatusCounts }) {
 }
 
 /**
+ * Panel «Mis tareas» de WF-001: tareas de todas mis listas, todas, creadas
+ * por mí o asignadas a mí (GET /me/tasks), en vista Lista, Calendario o Kanban.
+ */
+function MyTasksPanel({ onChanged }: { onChanged: () => void }) {
+  const [scope, setScope] = useState<MyTasksScope>("all");
+  const [view, setView] = useState<TaskView>("list");
+  const [error, setError] = useState<string | null>(null);
+  const { load, reload } = useLoad(() => getMyTasks(scope), scope);
+
+  return (
+    <Panel title="Mis tareas" description="Consulta lo que has creado y lo que tienes asignado.">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Segmented label="Vista de mis tareas" value={view} onChange={setView} options={VIEW_OPTIONS} />
+        <Segmented
+          label="Qué tareas mostrar"
+          value={scope}
+          onChange={setScope}
+          options={[
+            { value: "all", label: "Todas" },
+            { value: "created", label: "Creadas por mí" },
+            { value: "assigned", label: "Asignadas a mí" },
+          ]}
+        />
+      </div>
+      {error && <Alert>{error}</Alert>}
+      <LoadState load={load} loading="Cargando tareas…" onRetry={reload}>
+        {(tasks) =>
+          tasks.length === 0 && view !== "calendar" ? (
+            <p className="rounded-panel border border-dashed border-line p-6 text-center text-sm text-muted">
+              No hay tareas en esta selección.
+            </p>
+          ) : (
+            <TaskViews
+              view={view}
+              tasks={tasks}
+              showList
+              onChanged={(e) => {
+                setError(e ?? null);
+                reload();
+                onChanged();
+              }}
+            />
+          )
+        }
+      </LoadState>
+    </Panel>
+  );
+}
+
+/**
  * WF-001 Dashboard (RF-26, RF-37, RF-38): totales de mis tareas (asignadas a
  * mí y las de mis listas personales), próximas (2 días) y vencidas, y el
  * resumen de creadas y asignadas. Sin periodo (P-10).
@@ -102,6 +157,8 @@ export function DashboardScreen() {
               <StatCard label="Hechas" value={dashboard.assigned.done} hint="Tareas completadas" />
               <StatCard label="Vencidas" value={dashboard.overdue.length} hint="Requieren atención" tone="danger" />
             </section>
+
+            <MyTasksPanel onChanged={reload} />
 
             <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
               <Panel title="Próximas tareas" description="Vencen hoy o en los próximos 2 días.">
