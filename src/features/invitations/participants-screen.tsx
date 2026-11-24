@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert } from "@/components/ui/alert";
@@ -18,7 +19,7 @@ import { formatMoment } from "@/lib/dates";
 import { LIMITS } from "@/lib/validation";
 import { errorMessage } from "@/services/errors";
 import { cancelInvitation, getListInvitations, invite, removeMember } from "@/services/invitations";
-import { getList, getMembers } from "@/services/lists";
+import { getList, getMembers, transferList } from "@/services/lists";
 import type { Invitation, ListMember, TaskList } from "@/types/api";
 
 type Data = { list: TaskList; members: ListMember[]; pending: Invitation[] };
@@ -70,13 +71,14 @@ function InviteForm({ listId, onInvited }: { listId: number; onInvited: () => vo
 }
 
 /**
- * WF-005 Gestionar participantes (RF-11, RF-12, RF-14). Solo para el
+ * WF-005 Gestionar participantes (RF-11, RF-12, RF-14, RF-15). Solo para el
  * propietario de una lista compartida: invitar por correo o usuario (D-13),
- * expulsar (sus asignaciones se quitan, las tareas quedan; CA-23) y cancelar
- * invitaciones pendientes.
+ * expulsar (sus asignaciones se quitan, las tareas quedan; CA-23), cancelar
+ * invitaciones pendientes y transferir la propiedad.
  */
 export function ParticipantsScreen({ listId }: { listId: number }) {
   const { user } = useSession();
+  const router = useRouter();
   const [actionError, setActionError] = useState<string | null>(null);
   const { load, reload } = useLoad<Data>(async () => {
     const [list, members] = await Promise.all([getList(listId), getMembers(listId)]);
@@ -162,6 +164,23 @@ export function ParticipantsScreen({ listId }: { listId: number }) {
                         <Pill>{m.is_owner ? "Propietario" : "Participante"}</Pill>
                         {!m.is_owner && (
                           <ConfirmButton
+                            label="Hacer propietario"
+                            variant="secondary"
+                            className="px-3 py-2"
+                            title={`¿Transferir «${list.name}» a ${m.username}?`}
+                            confirmLabel="Transferir"
+                            pendingLabel="Transfiriendo…"
+                            onConfirm={async () => {
+                              await transferList(list.id, m.user_id);
+                              router.push(`/lists/${list.id}`);
+                            }}
+                          >
+                            {m.username} pasará a ser el propietario: gestionará los participantes y podrá eliminar la
+                            lista. Tú seguirás como participante y podrás abandonarla.
+                          </ConfirmButton>
+                        )}
+                        {!m.is_owner && (
+                          <ConfirmButton
                             label="Expulsar"
                             className="px-3 py-2"
                             title={`¿Expulsar a ${m.username}?`}
@@ -212,6 +231,7 @@ export function ParticipantsScreen({ listId }: { listId: number }) {
                     <li>✓ Invitar a nuevos participantes</li>
                     <li>✓ Cancelar invitaciones pendientes</li>
                     <li>✓ Expulsar participantes</li>
+                    <li>✓ Transferir la propiedad a un participante</li>
                   </ul>
                 </Panel>
                 <Panel title="Importante">
