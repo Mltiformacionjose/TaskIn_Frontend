@@ -158,6 +158,25 @@ export type ListCreateInput = {
   list_type: ListType;
 };
 
+/**
+ * PATCH /lists/{list_id} — RF-16. Solo el propietario; solo cambian los campos
+ * enviados. `list_type` solo admite pasar de «personal» a «shared».
+ */
+export type ListUpdateInput = Partial<ListCreateInput>;
+
+/** PATCH /me — RF-05. Cambiar el correo exige `current_password`. */
+export type ProfileUpdateInput = {
+  username?: string;
+  email?: string;
+  current_password?: string;
+};
+
+/** POST /me/password — RF-05. Cierra las demás sesiones. */
+export type PasswordChangeInput = {
+  current_password: string;
+  new_password: string;
+};
+
 /** POST /lists/{list_id}/tasks. El estado inicial lo fija el backend («todo»). */
 export type TaskCreateInput = {
   title: string;
@@ -170,7 +189,10 @@ export type TaskCreateInput = {
  * PATCH /tasks/{task_id}. Solo cambian los campos enviados; `description` y
  * `due_date` a null se borran; `assignee_ids` sustituye a todos.
  */
-export type TaskUpdateInput = Partial<TaskCreateInput & { status: TaskStatus }>;
+export type TaskUpdateInput = Partial<TaskCreateInput & { status: TaskStatus }> & {
+  /** RF-29: el `updated_at` que vio el formulario; si la tarea cambió después, 409 `edit_conflict`. */
+  expected_updated_at?: string;
+};
 
 /* ---------- Errores ---------- */
 
