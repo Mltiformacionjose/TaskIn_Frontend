@@ -47,6 +47,15 @@ export function validateRegister(input: RegisterInput): FieldErrors<RegisterInpu
   return errors;
 }
 
+/** Perfil (RF-05): mismas reglas que el registro para el usuario y el correo. */
+export function validateProfile(input: { username: string; email: string }): FieldErrors<{ username: string; email: string }> {
+  const all = validateRegister({ ...input, password: "x".repeat(LIMITS.passwordMin) });
+  const errors: FieldErrors<{ username: string; email: string }> = {};
+  if (all.username) errors.username = all.username;
+  if (all.email) errors.email = all.email;
+  return errors;
+}
+
 export function validateLogin(input: LoginInput): FieldErrors<LoginInput> {
   const errors: FieldErrors<LoginInput> = {};
   const email = validateEmail(input.email.trim());

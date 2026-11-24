@@ -9,6 +9,8 @@ import type { User } from "@/types/api";
 type Session = {
   user: User;
   logout: () => Promise<void>;
+  /** Sustituye los datos del usuario tras cambiar el perfil (RF-05). */
+  setUser: (user: User) => void;
 };
 
 const SessionContext = createContext<Session | null>(null);
@@ -65,5 +67,5 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     router.replace("/login");
   };
 
-  return <SessionContext.Provider value={{ user, logout }}>{children}</SessionContext.Provider>;
+  return <SessionContext.Provider value={{ user, logout, setUser }}>{children}</SessionContext.Provider>;
 }

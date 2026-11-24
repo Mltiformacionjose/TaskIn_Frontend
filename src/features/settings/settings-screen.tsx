@@ -10,6 +10,7 @@ import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { cn } from "@/lib/cn";
 import { getSettings, updateSettings } from "@/services/auth";
+import { PasswordForm, ProfileForm } from "./account-forms";
 import { errorMessage } from "@/services/errors";
 import type { Settings } from "@/types/api";
 
@@ -72,9 +73,9 @@ function NotificationsSwitch({ initial }: { initial: Settings }) {
   );
 }
 
-/** WF-010 Ajustes (RF-02, RF-04, RF-36): interruptor único de avisos y sesión. */
+/** WF-010 Ajustes (RF-02, RF-04, RF-05, RF-36): avisos, datos de la cuenta, contraseña y sesión. */
 export function SettingsScreen() {
-  const { user, logout } = useSession();
+  const { logout } = useSession();
   const { load, reload } = useLoad(getSettings);
 
   return (
@@ -86,13 +87,11 @@ export function SettingsScreen() {
             {(settings) => <NotificationsSwitch initial={settings} />}
           </LoadState>
         </Panel>
-        <Panel title="Cuenta">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
-            <dt className="text-muted">Usuario</dt>
-            <dd>{user.username}</dd>
-            <dt className="text-muted">Correo</dt>
-            <dd>{user.email}</dd>
-          </dl>
+        <Panel title="Cuenta" description="Tu nombre de usuario y el correo con el que entras.">
+          <ProfileForm />
+        </Panel>
+        <Panel title="Contraseña" description="Al cambiarla se cierran tus sesiones en otros dispositivos.">
+          <PasswordForm />
         </Panel>
         <Panel title="Sesión" description="Protege el acceso a tu cuenta.">
           <div className="flex items-center justify-between gap-5 border-b border-line pb-4">
