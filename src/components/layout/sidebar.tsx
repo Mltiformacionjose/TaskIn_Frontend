@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/features/auth/session-provider";
+import { useInboxCounts } from "@/features/inbox/inbox-counts";
 import { cn } from "@/lib/cn";
 
-type NavItem = { href: string; label: string; glyph: string };
+type NavItem = { href: string; label: string; glyph: string; counter?: "invitations" | "unread" };
 
 // Navegación del prototipo aprobado (I-25: «Invitaciones» en lugar de «Compartidas»).
-// Los contadores de invitaciones y avisos llegarán con sus pantallas.
+// «Invitaciones» cuenta las pendientes recibidas; «Notificaciones», los avisos sin leer.
 const MAIN_NAV: NavItem[] = [
   { href: "/", label: "Inicio", glyph: "⌂" },
   { href: "/lists", label: "Mis listas", glyph: "▤" },
-  { href: "/invitations", label: "Invitaciones", glyph: "✉" },
-  { href: "/notifications", label: "Notificaciones", glyph: "◉" },
+  { href: "/invitations", label: "Invitaciones", glyph: "✉", counter: "invitations" },
+  { href: "/notifications", label: "Notificaciones", glyph: "◉", counter: "unread" },
 ];
 
 const SETTINGS: NavItem = { href: "/settings", label: "Ajustes", glyph: "⚙" };
@@ -24,6 +25,8 @@ function isActive(pathname: string, href: string) {
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const active = isActive(pathname, item.href);
+  const counts = useInboxCounts();
+  const count = item.counter === "invitations" ? counts.invitations : item.counter === "unread" ? counts.unread : 0;
   return (
     <Link
       href={item.href}
@@ -37,6 +40,12 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
         {item.glyph}
       </span>
       {item.label}
+      {count > 0 && (
+        <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-on-accent">
+          <span aria-hidden="true">{count}</span>
+          <span className="sr-only">({count} sin revisar)</span>
+        </span>
+      )}
     </Link>
   );
 }
