@@ -103,7 +103,7 @@ export function DashboardScreen() {
               <StatCard label="Vencidas" value={dashboard.overdue.length} hint="Requieren atención" tone="danger" />
             </section>
 
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
               <Panel title="Próximas tareas" description="Vencen hoy o en los próximos 2 días.">
                 <TaskRows tasks={dashboard.upcoming} empty="No tienes tareas que venzan en los próximos días." />
               </Panel>
@@ -112,7 +112,7 @@ export function DashboardScreen() {
               </Panel>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
               <Panel title="Creadas y asignadas" description="Mis tareas incluyen las de tus listas personales.">
                 <table className="w-full text-sm">
                   <thead className="text-xs text-muted">

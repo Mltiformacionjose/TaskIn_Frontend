@@ -242,7 +242,7 @@ export function ListDetailScreen({ listId }: { listId: number }) {
 
             {actionError && <Alert>{actionError}</Alert>}
 
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.9fr)_minmax(250px,0.8fr)]">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.9fr)_minmax(250px,0.8fr)]">
               <Panel
                 title="Tareas"
                 description="Ordenadas por fecha de vencimiento; las que no tienen fecha, al final."

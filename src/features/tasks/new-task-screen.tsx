@@ -80,7 +80,7 @@ export function NewTaskScreen({ listId }: { listId: number }) {
         actions={<Badge>{LIST_TYPE_LABEL[list.list_type]}</Badge>}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.9fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.9fr)]">
         <Panel title="Información de la tarea" description="Completa los datos principales para crearla.">
           {created && (
             <Alert tone="success">

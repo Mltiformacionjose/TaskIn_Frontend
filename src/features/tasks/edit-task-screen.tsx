@@ -73,7 +73,7 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
                 </ConfirmButton>
               }
             />
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.9fr)]">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.9fr)]">
               <Panel title="Información de la tarea" description="Cambia lo que necesites y guarda.">
                 <TaskForm list={list} members={members} currentUserId={user.id} task={task} onSaved={backToList} />
               </Panel>
