@@ -80,7 +80,8 @@ test("con las notificaciones desactivadas no llegan avisos nuevos, y el ajuste s
 test("ajustes muestra la cuenta y permite cerrar sesión", async ({ page }) => {
   const me = await signIn(page, "settings");
   await page.goto("/settings");
-  await expect(page.getByRole("main").getByText(me.email)).toBeVisible();
+  await expect(page.getByRole("main").getByLabel("Correo electrónico")).toHaveValue(me.email);
+  await expect(page.getByRole("main").getByLabel("Nombre de usuario")).toHaveValue(me.username);
 
   await page.getByRole("main").getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(page).toHaveURL(/\/login$/);
