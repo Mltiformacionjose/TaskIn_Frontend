@@ -2,7 +2,7 @@
 
 TaskIn es una aplicación web de gestión de tareas y listas personales y compartidas: permite crear y organizar tareas, compartir listas con otras personas, recibir avisos y ver un resumen del trabajo. Este repositorio contiene el **frontend**, la interfaz de usuario. El backend vive en otro repositorio.
 
-> **Estado real (2026-11-24):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Pendiente (deseable): vistas Calendario y Kanban (WF-011, WF-012). Pruebas de extremo a extremo con Playwright: 33 en verde.
+> **Estado real (2026-11-24):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Deseables hechos: vistas Lista, Calendario y Kanban (WF-011, WF-012) en el detalle de lista y en el panel «Mis tareas» del dashboard, y filtro por responsable. Pruebas de extremo a extremo con Playwright: 37 en verde.
 
 ## Probar las pantallas
 
@@ -60,11 +60,11 @@ npm run smoke:api   # escenarios contra la API real (requiere backend)
 npm run test:e2e    # pruebas de extremo a extremo con Playwright
 ```
 
-A 2026-11-24 pasan lint, tipos, build y las 33 pruebas E2E.
+A 2026-11-24 pasan lint, tipos, build y las 37 pruebas E2E.
 
 ### Pruebas de extremo a extremo (Playwright)
 
-`npm run test:e2e` levanta **su propio** backend (puerto 8100, desde `../Nexora_Backend`, o `BACKEND_DIR`) y el frontend compilado (puerto 3100), así que no chocan con los servidores de desarrollo. Usan la base de datos del `.env` del backend (`taskin_dev`) salvo que se indique `E2E_DATABASE_URL`, y cada prueba crea usuarios con nombre único. La primera vez hay que instalar el navegador: `npx playwright install chromium`.
+`npm run test:e2e` levanta **su propio** backend (puerto 8100, desde `../Nexora_Backend`, o `BACKEND_DIR`) y el frontend compilado (puerto 3100), así que no chocan con los servidores de desarrollo. Usan una base propia, **`taskin_e2e`** (la URL del `.env` del backend con ese nombre de base, o `E2E_DATABASE_URL`), a la que aplican las migraciones antes de arrancar; así `taskin_dev` queda limpia. Hay que crearla una vez (ver TESTING_FRONTEND). Cada prueba crea usuarios con nombre único. La primera vez hay que instalar el navegador: `npx playwright install chromium`.
 
 ## Estructura del proyecto
 
