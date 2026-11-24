@@ -18,6 +18,8 @@ type TaskFormState = {
   values: TaskValues;
   errors: FieldErrors<TaskValues>;
   formError?: string;
+  /** RF-29: otra persona cambió la tarea mientras se editaba. */
+  conflict?: boolean;
 };
 
 const emptyValues: TaskValues = { title: "", description: null, due_date: null, assignee_ids: [], status: "todo" };
@@ -35,6 +37,8 @@ type TaskFormProps = {
   /** Con `task`, el formulario edita esa tarea (WF-004 modo edición). */
   task?: Task;
   onSaved: (task: Task) => void;
+  /** Recarga la tarea tras un conflicto de edición (RF-29). */
+  onReload?: () => void;
 };
 
 /**
@@ -43,7 +47,7 @@ type TaskFormProps = {
  * libremente (RF-22). Los responsables solo aparecen en listas compartidas y
  * solo se puede elegir a miembros de la lista (CA-08, CA-17, CA-18).
  */
-export function TaskForm({ list, members, currentUserId, task, onSaved }: TaskFormProps) {
+export function TaskForm({ list, members, currentUserId, task, onSaved, onReload }: TaskFormProps) {
   const shared = list.list_type === "shared";
   const editing = task !== undefined;
   const initialValues: TaskValues = task
@@ -71,11 +75,13 @@ export function TaskForm({ list, members, currentUserId, task, onSaved }: TaskFo
       try {
         const { status: newStatus, ...fields } = values;
         const saved = task
-          ? await updateTask(task.id, { ...fields, status: newStatus })
+          ? await updateTask(task.id, { ...fields, status: newStatus, expected_updated_at: task.updated_at })
           : await createTask(list.id, fields);
         onSaved(saved);
         return { values: task ? values : emptyValues, errors: {} };
       } catch (error) {
+        if (error instanceof ApiError && error.code === "edit_conflict")
+          return { values, errors: {}, formError: errorMessage(error), conflict: true };
         const field = error instanceof ApiError ? FIELDS.find((f) => error.fields.includes(f)) : undefined;
         if (field) return { values, errors: { [field]: errorMessage(error) } };
         return { values, errors: {}, formError: errorMessage(error) };
@@ -88,7 +94,19 @@ export function TaskForm({ list, members, currentUserId, task, onSaved }: TaskFo
 
   return (
     <form action={formAction} noValidate>
-      {state.formError && <Alert>{state.formError}</Alert>}
+      {state.formError && (
+        <Alert>
+          {state.formError}
+          {state.conflict && onReload && (
+            <>
+              {" "}
+              <button type="button" onClick={onReload} className="cursor-pointer font-semibold underline">
+                Cargar la versión actual
+              </button>
+            </>
+          )}
+        </Alert>
+      )}
       <TextField
         label="Título *"
         name="title"

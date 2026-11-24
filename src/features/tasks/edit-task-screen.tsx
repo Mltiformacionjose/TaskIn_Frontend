@@ -20,7 +20,8 @@ type Data = { list: TaskList; members: ListMember[]; task: Task };
 /**
  * WF-004 en modo edición (RF-19, RF-22, RF-24): el mismo formulario, con los
  * datos de la tarea y el estado editable. Cualquier miembro de la lista puede
- * editarla y eliminarla (RF-25).
+ * editarla y eliminarla (RF-25). Si otra persona la cambia mientras tanto, al
+ * guardar se avisa y se ofrece cargar la versión actual (RF-29).
  */
 export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: number }) {
   const { user } = useSession();
@@ -75,7 +76,16 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
             />
             <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.9fr)]">
               <Panel title="Información de la tarea" description="Cambia lo que necesites y guarda.">
-                <TaskForm list={list} members={members} currentUserId={user.id} task={task} onSaved={backToList} />
+                {/* La clave rehace el formulario con los datos nuevos al recargar tras un conflicto (RF-29). */}
+                <TaskForm
+                  key={task.updated_at}
+                  list={list}
+                  members={members}
+                  currentUserId={user.id}
+                  task={task}
+                  onSaved={backToList}
+                  onReload={reload}
+                />
               </Panel>
               <Panel title="Datos de la tarea">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
