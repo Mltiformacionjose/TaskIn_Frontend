@@ -15,7 +15,9 @@ export const LIMITS = {
   usernameMax: 50, // users.username varchar(50)
   emailMax: 255, // users.email varchar(255)
   passwordMin: 12, // propuesta de NEX-DOC-007 (RN-01, CA-01)
+  passwordMax: 128, // límite de la API (app/schemas/accounts.py)
   taskTitleMax: 150, // tasks.title varchar(150)
+  taskDescriptionMax: 2000, // límite de la API (P-32); la columna es text
   listNameMax: 150, // task_lists.name varchar(150)
   listDescriptionMax: 500, // task_lists.description varchar(500)
 } as const;
@@ -60,9 +62,18 @@ export function validateTaskCreate(input: TaskCreateInput): FieldErrors<TaskCrea
   else if (title.length > LIMITS.taskTitleMax)
     errors.title = `El título no puede superar ${LIMITS.taskTitleMax} caracteres.`;
 
+  if (input.description && input.description.trim().length > LIMITS.taskDescriptionMax)
+    errors.description = `La descripción no puede superar ${LIMITS.taskDescriptionMax} caracteres.`;
+
   if (input.due_date && !DATE_PATTERN.test(input.due_date))
     errors.due_date = "Introduce una fecha válida.";
   return errors;
+}
+
+/** Contraseña nueva (registro y recuperación): de 12 a 128 caracteres. */
+export function validateNewPassword(password: string): string | undefined {
+  if (password.length < LIMITS.passwordMin) return `La contraseña debe tener al menos ${LIMITS.passwordMin} caracteres.`;
+  if (password.length > LIMITS.passwordMax) return `La contraseña no puede superar ${LIMITS.passwordMax} caracteres.`;
 }
 
 export function validateListCreate(input: ListCreateInput): FieldErrors<ListCreateInput> {

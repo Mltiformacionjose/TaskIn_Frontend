@@ -8,55 +8,80 @@ import { Pill } from "@/components/ui/pill";
 import { cn } from "@/lib/cn";
 import { LIMITS, hasErrors, validateTaskCreate, type FieldErrors } from "@/lib/validation";
 import { ApiError, errorMessage } from "@/services/errors";
-import { createTask } from "@/services/tasks";
-import type { ListMember, Task, TaskCreateInput, TaskList } from "@/types/api";
-import { TASK_STATUS } from "./status";
+import { createTask, updateTask } from "@/services/tasks";
+import type { ListMember, Task, TaskCreateInput, TaskList, TaskStatus } from "@/types/api";
+import { STATUS_ORDER, TASK_STATUS } from "./status";
+
+type TaskValues = TaskCreateInput & { status: TaskStatus };
 
 type TaskFormState = {
-  values: TaskCreateInput;
-  errors: FieldErrors<TaskCreateInput>;
+  values: TaskValues;
+  errors: FieldErrors<TaskValues>;
   formError?: string;
 };
 
-const emptyValues: TaskCreateInput = { title: "", description: null, due_date: null, assignee_ids: [] };
+const emptyValues: TaskValues = { title: "", description: null, due_date: null, assignee_ids: [], status: "todo" };
 
-const FIELDS: (keyof TaskCreateInput)[] = ["title", "description", "due_date", "assignee_ids"];
+const FIELDS: (keyof TaskValues)[] = ["title", "description", "due_date", "assignee_ids", "status"];
+
+function isStatus(value: unknown): value is TaskStatus {
+  return typeof value === "string" && value in TASK_STATUS;
+}
 
 type TaskFormProps = {
   list: TaskList;
   members: ListMember[];
   currentUserId: number;
-  onCreated: (task: Task) => void;
+  /** Con `task`, el formulario edita esa tarea (WF-004 modo edición). */
+  task?: Task;
+  onSaved: (task: Task) => void;
 };
 
 /**
- * Formulario de WF-004 (modo creación). El estado inicial lo fija el backend
- * («Por hacer», CA-20). Los responsables solo aparecen en listas compartidas
- * y solo se puede elegir a miembros de la lista (CA-08, CA-17, CA-18).
+ * Formulario de WF-004, para crear y para editar. Al crear, el estado inicial
+ * lo fija el backend («Por hacer», CA-20); al editar se puede cambiar
+ * libremente (RF-22). Los responsables solo aparecen en listas compartidas y
+ * solo se puede elegir a miembros de la lista (CA-08, CA-17, CA-18).
  */
-export function TaskForm({ list, members, currentUserId, onCreated }: TaskFormProps) {
+export function TaskForm({ list, members, currentUserId, task, onSaved }: TaskFormProps) {
   const shared = list.list_type === "shared";
+  const editing = task !== undefined;
+  const initialValues: TaskValues = task
+    ? {
+        title: task.title,
+        description: task.description,
+        due_date: task.due_date,
+        assignee_ids: task.assignee_ids,
+        status: task.status,
+      }
+    : emptyValues;
 
   const [state, formAction, pending] = useActionState<TaskFormState, FormData>(
     async (_prev, formData) => {
-      const values: TaskCreateInput = {
+      const status = formData.get("status");
+      const values: TaskValues = {
         title: String(formData.get("title") ?? ""),
         description: String(formData.get("description") ?? "") || null,
         due_date: String(formData.get("due_date") ?? "") || null,
         assignee_ids: shared ? formData.getAll("assignee_ids").map(Number) : [],
+        status: isStatus(status) ? status : initialValues.status,
       };
       const errors = validateTaskCreate(values);
       if (hasErrors(errors)) return { values, errors };
       try {
-        onCreated(await createTask(list.id, values));
-        return { values: emptyValues, errors: {} };
+        const { status: newStatus, ...fields } = values;
+        const saved = task
+          ? await updateTask(task.id, { ...fields, status: newStatus })
+          : await createTask(list.id, fields);
+        onSaved(saved);
+        return { values: task ? values : emptyValues, errors: {} };
       } catch (error) {
         const field = error instanceof ApiError ? FIELDS.find((f) => error.fields.includes(f)) : undefined;
         if (field) return { values, errors: { [field]: errorMessage(error) } };
         return { values, errors: {}, formError: errorMessage(error) };
       }
     },
-    { values: emptyValues, errors: {} },
+    { values: initialValues, errors: {} },
   );
 
   const initial = TASK_STATUS.todo;
@@ -78,6 +103,7 @@ export function TaskForm({ list, members, currentUserId, onCreated }: TaskFormPr
         optional
         name="description"
         placeholder="Añade detalles, instrucciones o información útil..."
+        maxLength={LIMITS.taskDescriptionMax}
         defaultValue={state.values.description ?? ""}
         error={state.errors.description}
       />
@@ -88,16 +114,37 @@ export function TaskForm({ list, members, currentUserId, onCreated }: TaskFormPr
           name="due_date"
           type="date"
           defaultValue={state.values.due_date ?? ""}
-          hint="Puedes crear tareas sin fecha y añadirla más adelante."
+          hint={editing ? "Déjala vacía para quitar la fecha." : "Puedes crear tareas sin fecha y añadirla más adelante."}
           error={state.errors.due_date}
         />
-        <div className="mb-[19px]">
-          <p className="mb-2 text-sm font-semibold">Estado inicial</p>
-          <Pill tone={initial.tone} className="w-full rounded-lg px-3.5 py-[13px]">
-            {initial.label}
-          </Pill>
-          <small className="mt-[7px] block text-xs text-muted">Al crear, la tarea comienza en este estado.</small>
-        </div>
+        {editing ? (
+          <div className="mb-[19px]">
+            <label htmlFor="task-status" className="mb-2 block text-sm font-semibold">
+              Estado
+            </label>
+            <select
+              id="task-status"
+              name="status"
+              defaultValue={state.values.status}
+              className="w-full rounded-lg border border-line bg-panel-2 px-3.5 py-[13px] text-fg outline-none focus-visible:border-accent"
+            >
+              {STATUS_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {TASK_STATUS[s].label}
+                </option>
+              ))}
+            </select>
+            <small className="mt-[7px] block text-xs text-muted">Puedes pasar de un estado a otro libremente.</small>
+          </div>
+        ) : (
+          <div className="mb-[19px]">
+            <p className="mb-2 text-sm font-semibold">Estado inicial</p>
+            <Pill tone={initial.tone} className="w-full rounded-lg px-3.5 py-[13px]">
+              {initial.label}
+            </Pill>
+            <small className="mt-[7px] block text-xs text-muted">Al crear, la tarea comienza en este estado.</small>
+          </div>
+        )}
       </div>
 
       {shared && (
@@ -144,7 +191,7 @@ export function TaskForm({ list, members, currentUserId, onCreated }: TaskFormPr
           Cancelar
         </ButtonLink>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creando tarea…" : "Crear tarea"}
+          {editing ? (pending ? "Guardando…" : "Guardar cambios") : pending ? "Creando tarea…" : "Crear tarea"}
         </Button>
       </div>
     </form>

@@ -95,7 +95,7 @@ export function NewTaskScreen({ listId }: { listId: number }) {
             list={list}
             members={members}
             currentUserId={user.id}
-            onCreated={(task) => {
+            onSaved={(task) => {
               setCreated(task);
               setFormKey((k) => k + 1);
             }}
