@@ -1,10 +1,9 @@
 /**
  * Tipos de los datos que intercambian frontend y backend.
  *
- * Reflejan el contrato de API (PROPUESTA, sin endpoints implementados) y el
- * modelo de datos v0.6 (definitivo). Los nombres van en snake_case porque así
- * los devolverá FastAPI. Cuando exista OpenAPI, este archivo debe ajustarse a
- * él (ADR-0009): OpenAPI manda.
+ * Copian las respuestas de la API real (API_CONTRACT v0.8, §4.1 a §4.7). Los
+ * nombres van en snake_case porque así los devuelve FastAPI. Si cambia la
+ * API, OpenAPI (`/docs` del backend) manda y este archivo se ajusta (ADR-0009).
  */
 
 export type Id = number;
@@ -22,6 +21,11 @@ export type User = {
   email: string;
 };
 
+/** GET /me/settings — interruptor único de avisos (RF-36). */
+export type Settings = {
+  notifications_enabled: boolean;
+};
+
 export type TaskList = {
   id: Id;
   name: string;
@@ -32,11 +36,7 @@ export type TaskList = {
   is_default: boolean;
 };
 
-/**
- * Lista con el resumen que muestra WF-002 Mis listas (GET /lists).
- * Los recuentos son una PROPUESTA del contrato de API (v0.3): evitan pedir
- * las tareas de cada lista solo para contarlas.
- */
+/** Lista con el resumen que muestra WF-002 Mis listas (GET /lists). */
 export type ListSummary = TaskList & {
   task_count: number;
   done_count: number;
@@ -60,9 +60,68 @@ export type Task = {
   due_date: string | null;
   status: TaskStatus;
   creator_id: Id;
+  /** Sin duplicados y ordenados. */
   assignee_ids: Id[];
   completed_at: string | null;
   created_at: string;
+  updated_at: string;
+};
+
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled" | "removed";
+
+export type Invitation = {
+  id: Id;
+  list_id: Id;
+  list_name: string;
+  owner_username: string;
+  invited_user_id: Id;
+  invited_username: string;
+  status: InvitationStatus;
+  created_at: string;
+  responded_at: string | null;
+};
+
+export type NotificationType = "task_assigned" | "task_overdue" | "invitation_received";
+
+export type Notification = {
+  id: Id;
+  notification_type: NotificationType;
+  task_id: Id | null;
+  task_title: string | null;
+  invitation_id: Id | null;
+  list_id: Id | null;
+  list_name: string | null;
+  created_at: string;
+  read_at: string | null;
+};
+
+export type StatusCounts = {
+  todo: number;
+  in_progress: number;
+  done: number;
+  total: number;
+};
+
+/** Tarea resumida de las secciones «Próximas» y «Vencidas» del dashboard. */
+export type DashboardTask = {
+  id: Id;
+  list_id: Id;
+  list_name: string;
+  title: string;
+  due_date: string;
+  status: TaskStatus;
+};
+
+/** GET /dashboard — RF-37, RF-38. */
+export type Dashboard = {
+  /** Fecha del servidor, `AAAA-MM-DD`. */
+  today: string;
+  /** Mis tareas: asignadas a mí y las de mis listas personales. */
+  assigned: StatusCounts;
+  /** Las que he creado en listas de las que soy miembro. */
+  created: StatusCounts;
+  upcoming: DashboardTask[];
+  overdue: DashboardTask[];
 };
 
 /* ---------- Cuerpos de petición ---------- */
@@ -77,6 +136,12 @@ export type RegisterInput = {
 /** POST /auth/login */
 export type LoginInput = {
   email: string;
+  password: string;
+};
+
+/** POST /auth/password-reset/confirm */
+export type PasswordResetConfirmInput = {
+  token: string;
   password: string;
 };
 
@@ -95,9 +160,15 @@ export type TaskCreateInput = {
   assignee_ids: Id[];
 };
 
+/**
+ * PATCH /tasks/{task_id}. Solo cambian los campos enviados; `description` y
+ * `due_date` a null se borran; `assignee_ids` sustituye a todos.
+ */
+export type TaskUpdateInput = Partial<TaskCreateInput & { status: TaskStatus }>;
+
 /* ---------- Errores ---------- */
 
-/** Estructura de error propuesta en API_CONTRACT §3. */
+/** Estructura de error única de la API (API_CONTRACT §3). */
 export type ApiErrorBody = {
   error: {
     code: string;

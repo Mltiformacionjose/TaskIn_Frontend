@@ -1,10 +1,31 @@
-import type { Id, Task, TaskCreateInput } from "@/types/api";
-import { API_MODE } from "./config";
+import type { Id, Task, TaskCreateInput, TaskStatus, TaskUpdateInput } from "@/types/api";
 import { request } from "./http";
-import { mockDb } from "./mock/db";
+
+/**
+ * GET /lists/{list_id}/tasks — RF-21, RF-23. Filtro opcional por estado;
+ * ordenadas por fecha límite, las que no tienen fecha al final.
+ */
+export function getTasks(listId: Id, status?: TaskStatus): Promise<Task[]> {
+  const query = status ? `?status=${status}` : "";
+  return request<Task[]>(`/lists/${listId}/tasks${query}`);
+}
 
 /** POST /lists/{list_id}/tasks — RF-19, RF-20. */
 export function createTask(listId: Id, input: TaskCreateInput): Promise<Task> {
-  if (API_MODE === "mock") return mockDb.createTask(listId, input);
   return request<Task>(`/lists/${listId}/tasks`, { method: "POST", body: input });
+}
+
+/** GET /tasks/{task_id} — RF-21. */
+export function getTask(taskId: Id): Promise<Task> {
+  return request<Task>(`/tasks/${taskId}`);
+}
+
+/** PATCH /tasks/{task_id} — RF-19, RF-22, RF-24. */
+export function updateTask(taskId: Id, input: TaskUpdateInput): Promise<Task> {
+  return request<Task>(`/tasks/${taskId}`, { method: "PATCH", body: input });
+}
+
+/** DELETE /tasks/{task_id} — RF-19. */
+export function deleteTask(taskId: Id): Promise<void> {
+  return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
 }

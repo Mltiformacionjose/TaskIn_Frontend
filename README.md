@@ -4,15 +4,13 @@ TaskIn es una aplicación web de gestión de tareas y listas personales y compar
 
 > **Estado real (2026-11-19):** el proyecto se llama TaskIn (antes Nexora) y usa la paleta naranja de Factoría F5 (tema oscuro; el modo claro está por decidir). Desarrollo en marcha, pieza a pieza y con un commit por pieza. Hecho: fundación visual del diseño aprobado, componentes base, capa de servicios hacia la API y las pantallas **inicio de sesión (WF-007), registro (WF-008), recuperar contraseña (WF-009), mis listas (WF-002) y nueva tarea (WF-004)**, dentro del marco con barra lateral. `/lists/[listId]` es una página provisional hasta WF-003. Como el backend aún no tiene endpoints, funcionan en **modo simulado**: los datos viven en el navegador y no se guarda nada en una base de datos. La página `/` sigue siendo un muestrario temporal.
 
-## Probar las pantallas (modo simulado)
+## Probar las pantallas
 
-1. `npm run dev` y abre `http://localhost:3000/register` o `/login`.
-2. Cuenta de demostración: **demo@taskin.app** / **taskin-demo-1234**.
-3. Mis listas: `/lists`. Busca, filtra por tipo, cambia entre cuadrícula y lista, y crea listas con «Nueva lista».
-4. Nueva tarea: `/lists/1/tasks/new` (lista compartida «Proyecto TaskIn», con responsables) o `/lists/2/tasks/new` («Mis tareas» de la cuenta demo, sin responsables).
-5. Cada cuenta nueva recibe su propia lista «Mis tareas», como propone el modelo de datos v0.6, y la ve en `/lists`. Las listas de otras personas responden «lista no accesible», como haría el backend.
+El frontend usa siempre la **API real** (el modo simulado se retiró el 2026-11-24, al completarse el backend).
 
-Los datos simulados se borran al cerrar la pestaña. Cuando el backend tenga endpoints, pon `NEXT_PUBLIC_API_MODE=http` en `.env.local`. Las pantallas no cambian y `npm run smoke:api` comprueba la API real (TESTING_FRONTEND, `Nexora-Documentation/10-frontend/TESTING_FRONTEND.md`).
+1. Arranca el backend de TaskIn en `http://localhost:8000` (ver su README).
+2. `npm run dev` y abre `http://localhost:3000/register` para crear una cuenta, o `/login`.
+3. Usa siempre `localhost` (no `127.0.0.1`): CORS y la cookie de sesión dependen del origen.
 
 ## Responsabilidad del frontend
 
@@ -27,7 +25,7 @@ Next.js 16.4.6 (App Router), React 19.3.0, TypeScript 5 (estricto), Tailwind CSS
 ## Requisitos previos
 
 - Node.js con npm (el proyecto se ha usado con Node 24; la versión mínima no está documentada).
-- Opcional para trabajar con datos reales: el backend de TaskIn en ejecución (aún no hay endpoints).
+- El backend de TaskIn en ejecución.
 
 ## Instalación (PowerShell, desde esta carpeta)
 
@@ -41,8 +39,7 @@ Copia `.env.example` a `.env.local` y ajusta el valor. `.env.local` está ignora
 
 | Variable | Descripción |
 |---|---|
-| `NEXT_PUBLIC_API_MODE` | `mock` (por defecto, datos simulados) o `http` (API real). |
-| `NEXT_PUBLIC_API_URL` | URL base de la API del backend (ejemplo: `http://localhost:8000/api/v1`). Solo se usa en modo `http`. Es **pública**: no pongas secretos. |
+| `NEXT_PUBLIC_API_URL` | URL base de la API del backend (ejemplo: `http://localhost:8000/api/v1`). Es **pública**: no pongas secretos. |
 
 ## Ejecución local
 
@@ -71,7 +68,7 @@ src/app/(public)/   login, register, forgot-password (sin sesión)
 src/app/(private)/  marco con barra lateral; lists/[listId]/tasks/new
 src/components/     ui/ (primitivos) y layout/ (barra lateral, encabezado)
 src/features/       auth/ y tasks/ (formularios y pantallas); el resto vacías
-src/services/       llamadas a la API y modo simulado (mock/)
+src/services/       llamadas a la API (una función por ruta)
 src/lib/ types/     utilidades, validaciones y tipos de la API
 scripts/            api-smoke.mjs
 ```
