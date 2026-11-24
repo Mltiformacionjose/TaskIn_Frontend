@@ -2,7 +2,7 @@
 
 TaskIn es una aplicación web de gestión de tareas y listas personales y compartidas: permite crear y organizar tareas, compartir listas con otras personas, recibir avisos y ver un resumen del trabajo. Este repositorio contiene el **frontend**, la interfaz de usuario. El backend vive en otro repositorio.
 
-> **Estado real (2026-11-19):** el proyecto se llama TaskIn (antes Nexora) y usa la paleta naranja de Factoría F5 (tema oscuro; el modo claro está por decidir). Desarrollo en marcha, pieza a pieza y con un commit por pieza. Hecho: fundación visual del diseño aprobado, componentes base, capa de servicios hacia la API y las pantallas **inicio de sesión (WF-007), registro (WF-008), recuperar contraseña (WF-009), mis listas (WF-002) y nueva tarea (WF-004)**, dentro del marco con barra lateral. `/lists/[listId]` es una página provisional hasta WF-003. Como el backend aún no tiene endpoints, funcionan en **modo simulado**: los datos viven en el navegador y no se guarda nada en una base de datos. La página `/` sigue siendo un muestrario temporal.
+> **Estado real (2026-11-24):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Pendiente (deseable): vistas Calendario y Kanban (WF-011, WF-012). Pruebas de extremo a extremo con Playwright: 33 en verde.
 
 ## Probar las pantallas
 
@@ -25,7 +25,7 @@ Next.js 16.4.6 (App Router), React 19.3.0, TypeScript 5 (estricto), Tailwind CSS
 ## Requisitos previos
 
 - Node.js con npm (el proyecto se ha usado con Node 24; la versión mínima no está documentada).
-- El backend de TaskIn en ejecución.
+- El backend de TaskIn en ejecución (también para las pruebas E2E, que lo arrancan solas desde la carpeta hermana `Nexora_Backend`).
 
 ## Instalación (PowerShell, desde esta carpeta)
 
@@ -47,7 +47,7 @@ Copia `.env.example` a `.env.local` y ajusta el valor. `.env.local` está ignora
 npm run dev
 ```
 
-Abre `http://localhost:3000`. Rutas disponibles: `/login`, `/register`, `/forgot-password`, `/lists`, `/lists/[listId]` (provisional), `/lists/[listId]/tasks/new` y `/` (muestrario temporal).
+Abre `http://localhost:3000`. Rutas: `/` (dashboard), `/lists`, `/lists/[listId]`, `/lists/[listId]/tasks/new`, `/lists/[listId]/tasks/[taskId]`, `/lists/[listId]/participants`, `/invitations`, `/notifications`, `/settings`; sin sesión, `/login`, `/register`, `/forgot-password` y `/reset-password?token=…`.
 
 ## Comandos de comprobación y build
 
@@ -57,25 +57,32 @@ npm run typecheck   # TypeScript
 npm run build       # compilación de producción
 npm run start       # sirve la compilación
 npm run smoke:api   # escenarios contra la API real (requiere backend)
+npm run test:e2e    # pruebas de extremo a extremo con Playwright
 ```
 
-A 2026-11-19 pasan lint, tipos y build. No hay pruebas automáticas de interfaz todavía (TESTING_FRONTEND, `Nexora-Documentation/10-frontend/TESTING_FRONTEND.md`).
+A 2026-11-24 pasan lint, tipos, build y las 33 pruebas E2E.
+
+### Pruebas de extremo a extremo (Playwright)
+
+`npm run test:e2e` levanta **su propio** backend (puerto 8100, desde `../Nexora_Backend`, o `BACKEND_DIR`) y el frontend compilado (puerto 3100), así que no chocan con los servidores de desarrollo. Usan la base de datos del `.env` del backend (`taskin_dev`) salvo que se indique `E2E_DATABASE_URL`, y cada prueba crea usuarios con nombre único. La primera vez hay que instalar el navegador: `npx playwright install chromium`.
 
 ## Estructura del proyecto
 
 ```
-src/app/(public)/   login, register, forgot-password (sin sesión)
-src/app/(private)/  marco con barra lateral; lists/[listId]/tasks/new
+src/app/(public)/   login, register, forgot-password, reset-password (sin sesión)
+src/app/(private)/  marco con barra lateral: dashboard, lists, invitations, notifications, settings
 src/components/     ui/ (primitivos) y layout/ (barra lateral, encabezado)
-src/features/       auth/ y tasks/ (formularios y pantallas); el resto vacías
+src/features/       una carpeta por módulo: auth, dashboard, lists, tasks, invitations, notifications, settings, inbox
 src/services/       llamadas a la API (una función por ruta)
-src/lib/ types/     utilidades, validaciones y tipos de la API
+src/lib/ types/     utilidades (fechas, validaciones) y tipos de la API
+src/hooks/          useLoad (carga de datos con reintento)
 scripts/            api-smoke.mjs
+e2e/                pruebas Playwright y sus utilidades (helpers.ts)
 ```
 
 ## Comunicación con el backend
 
-Todas las llamadas pasan por `src/services/` (JSON, sesión por cookie `HttpOnly`, `credentials: "include"`). **El contrato HTTP está en estado de propuesta** y no hay endpoints implementados: ver el contrato de API del backend (`Nexora-Documentation/11-backend/API_CONTRACT.md`). Si el backend usa otro dominio, tendrá que permitir CORS con credenciales para el origen del frontend (AT-04, Pendiente).
+Todas las llamadas pasan por `src/services/` (JSON, sesión por cookie `HttpOnly`, `credentials: "include"`). Hay una función por ruta del contrato (`Nexora-Documentation/11-backend/API_CONTRACT.md`, 28 rutas); los tipos de `src/types/api.ts` copian sus respuestas. El backend solo acepta peticiones que cambian datos desde `FRONTEND_ORIGIN` (CORS y CSRF, AT-04): usa `localhost`, no `127.0.0.1`.
 
 ## Documentación
 
