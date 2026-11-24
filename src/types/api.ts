@@ -67,6 +67,12 @@ export type Task = {
   updated_at: string;
 };
 
+/** Tarea de GET /me/tasks: incluye el nombre de su lista. */
+export type MyTask = Task & { list_name: string };
+
+/** Alcance de GET /me/tasks (panel «Mis tareas» de WF-001). */
+export type MyTasksScope = "all" | "created" | "assigned";
+
 export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled" | "removed";
 
 export type Invitation = {

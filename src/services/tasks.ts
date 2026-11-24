@@ -1,4 +1,4 @@
-import type { Id, Task, TaskCreateInput, TaskStatus, TaskUpdateInput } from "@/types/api";
+import type { Id, MyTask, MyTasksScope, Task, TaskCreateInput, TaskStatus, TaskUpdateInput } from "@/types/api";
 import { request } from "./http";
 
 /**
@@ -28,4 +28,12 @@ export function updateTask(taskId: Id, input: TaskUpdateInput): Promise<Task> {
 /** DELETE /tasks/{task_id} — RF-19. */
 export function deleteTask(taskId: Id): Promise<void> {
   return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
+}
+
+/**
+ * GET /me/tasks — mis tareas en todas mis listas: todas, creadas por mí o
+ * asignadas a mí (las de mis listas personales cuentan como mías).
+ */
+export function getMyTasks(scope: MyTasksScope = "all"): Promise<MyTask[]> {
+  return request<MyTask[]>(`/me/tasks?scope=${scope}`);
 }
