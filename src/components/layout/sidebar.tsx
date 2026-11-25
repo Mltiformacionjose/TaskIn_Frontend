@@ -13,6 +13,7 @@ type NavItem = { href: string; label: string; glyph: string; counter?: "invitati
 const MAIN_NAV: NavItem[] = [
   { href: "/", label: "Inicio", glyph: "⌂" },
   { href: "/lists", label: "Mis listas", glyph: "▤" },
+  { href: "/stats", label: "Estadísticas", glyph: "▥" },
   { href: "/invitations", label: "Invitaciones", glyph: "✉", counter: "invitations" },
   { href: "/notifications", label: "Notificaciones", glyph: "◉", counter: "unread" },
 ];
