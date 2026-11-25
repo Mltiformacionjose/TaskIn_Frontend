@@ -47,7 +47,7 @@ function Stat({ label, value, hint }: { label: string; value: number; hint: stri
  * estado (en la API) y por responsable (en el navegador), ordenadas por fecha
  * (P-14) y vistas como Lista, Calendario (WF-011) o Kanban (WF-012);
  * participantes y datos de la lista. El propietario puede gestionar
- * participantes y eliminar la lista (RF-17).
+ * participantes y eliminar la lista, que va a la papelera (RF-17, RF-18).
  */
 export function ListDetailScreen({ listId }: { listId: number }) {
   const { user } = useSession();
@@ -133,8 +133,8 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                         router.push("/lists");
                       }}
                     >
-                      «{list.name}» se eliminará de forma definitiva, con sus {plural(all.length, "tarea")}, sus
-                      invitaciones y sus avisos. No se puede deshacer.
+                      «{list.name}» irá a la papelera con sus {plural(all.length, "tarea")}: nadie la verá, pero
+                      podrás recuperarla con todo durante 30 días. Después se borrará definitivamente.
                     </ConfirmButton>
                   )}
                 </div>
@@ -253,6 +253,12 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                     Propietario: {owner ? (owner.user_id === user.id ? "Tú" : owner.username) : "—"}
                     <br />
                     Tipo: {LIST_TYPE_LABEL[list.list_type]}
+                    {list.due_date_required && (
+                      <>
+                        <br />
+                        Fecha límite obligatoria en cada tarea
+                      </>
+                    )}
                   </p>
                   <p className="mt-3 text-xs leading-normal text-muted">
                     {shared

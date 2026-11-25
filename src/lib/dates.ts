@@ -44,5 +44,11 @@ export function formatMoment(isoDateTime: string, now = new Date()): string {
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (then.toDateString() === yesterday.toDateString()) return "Ayer";
-  return formatDate(`${then.getFullYear()}-${String(then.getMonth() + 1).padStart(2, "0")}-${String(then.getDate()).padStart(2, "0")}`);
+  return formatLocalDate(isoDateTime);
+}
+
+/** «14 nov 2026» de un instante (con hora), en la fecha local del navegador. */
+export function formatLocalDate(isoDateTime: string): string {
+  const d = new Date(isoDateTime);
+  return formatDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
 }

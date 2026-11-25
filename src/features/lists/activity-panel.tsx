@@ -11,10 +11,11 @@ import { formatMoment } from "@/lib/dates";
 import { getActivity } from "@/services/lists";
 import type { Activity } from "@/types/api";
 
+/** Nombre de quien hizo la acción; sin nombre si eliminó su cuenta (RF-07). */
 function Who({ name, me }: { name: string | null; me: boolean }) {
   return (
     <strong className="font-semibold">
-      {name ?? "Alguien"}
+      {name ?? "Usuario eliminado"}
       {me && <span className="font-normal text-muted"> (tú)</span>}
     </strong>
   );
@@ -22,7 +23,7 @@ function Who({ name, me }: { name: string | null; me: boolean }) {
 
 /** Frase de una entrada del historial (RF-31). */
 export function describeActivity(entry: Activity, listId: number, currentUserId: number): ReactNode {
-  const actor = <Who name={entry.actor_username} me={entry.actor_id === currentUserId} />;
+  const actor = <Who name={entry.actor_username} me={entry.actor_id !== null && entry.actor_id === currentUserId} />;
   const target = <Who name={entry.target_username} me={entry.target_user_id === currentUserId} />;
   const task =
     entry.task_id !== null ? (
@@ -44,7 +45,9 @@ export function describeActivity(entry: Activity, listId: number, currentUserId:
         </>
       );
     case "task_deleted":
-      return <>{actor} eliminó {task}</>;
+      return <>{actor} envió {task} a la papelera</>;
+    case "task_restored":
+      return <>{actor} recuperó {task} de la papelera</>;
     case "member_joined":
       return <>{target} se unió a la lista</>;
     case "member_left":
@@ -55,6 +58,10 @@ export function describeActivity(entry: Activity, listId: number, currentUserId:
       return <>{actor} transfirió la lista a {target}</>;
     case "list_updated":
       return <>{actor} editó la lista</>;
+    case "list_deleted":
+      return <>{actor} envió la lista a la papelera</>;
+    case "list_restored":
+      return <>{actor} recuperó la lista de la papelera</>;
   }
 }
 

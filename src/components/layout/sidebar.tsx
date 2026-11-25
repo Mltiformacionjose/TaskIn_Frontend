@@ -16,6 +16,7 @@ const MAIN_NAV: NavItem[] = [
   { href: "/stats", label: "Estadísticas", glyph: "▥" },
   { href: "/invitations", label: "Invitaciones", glyph: "✉", counter: "invitations" },
   { href: "/notifications", label: "Notificaciones", glyph: "◉", counter: "unread" },
+  { href: "/trash", label: "Papelera", glyph: "⌫" },
 ];
 
 const SETTINGS: NavItem = { href: "/settings", label: "Ajustes", glyph: "⚙" };

@@ -21,7 +21,7 @@ type Data = { list: TaskList; members: ListMember[]; task: Task; history: Activi
 /**
  * WF-004 en modo edición (RF-19, RF-22, RF-24): el mismo formulario, con los
  * datos de la tarea y el estado editable. Cualquier miembro de la lista puede
- * editarla y eliminarla (RF-25). Si otra persona la cambia mientras tanto, al
+ * editarla y enviarla a la papelera (RF-25, RF-30). Si otra persona la cambia mientras tanto, al
  * guardar se avisa y se ofrece cargar la versión actual (RF-29).
  */
 export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: number }) {
@@ -48,6 +48,13 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
     <LoadState load={load} loading="Cargando tarea…" onRetry={reload}>
       {({ list, members, task, history }) => {
         const creator = members.find((m) => m.user_id === task.creator_id);
+        const creatorName = creator
+          ? creator.user_id === user.id
+            ? "Ti"
+            : creator.username
+          : task.creator_id === null
+            ? "Usuario eliminado"
+            : "Una persona que ya no participa";
         return (
           <>
             <PageHeader
@@ -76,7 +83,8 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
                     backToList();
                   }}
                 >
-                  «{task.title}» se eliminará de forma definitiva, junto con sus responsables.
+                  «{task.title}» irá a la papelera. Cualquier participante de la lista podrá recuperarla durante 30
+                  días; después se borrará definitivamente.
                 </ConfirmButton>
               }
             />
@@ -99,7 +107,7 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
                     <dt className="text-muted">Lista</dt>
                     <dd>{list.name}</dd>
                     <dt className="text-muted">Creada por</dt>
-                    <dd>{creator ? (creator.user_id === user.id ? "Ti" : creator.username) : "Una persona que ya no participa"}</dd>
+                    <dd>{creatorName}</dd>
                     <dt className="text-muted">Creada el</dt>
                     <dd>{formatDate(task.created_at)}</dd>
                     {task.completed_at && (
