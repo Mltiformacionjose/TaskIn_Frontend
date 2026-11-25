@@ -25,9 +25,14 @@ export function updateTask(taskId: Id, input: TaskUpdateInput): Promise<Task> {
   return request<Task>(`/tasks/${taskId}`, { method: "PATCH", body: input });
 }
 
-/** DELETE /tasks/{task_id} — RF-19. */
+/** DELETE /tasks/{task_id} — RF-19, RF-30. Va a la papelera 30 días. */
 export function deleteTask(taskId: Id): Promise<void> {
   return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
+}
+
+/** POST /tasks/{task_id}/restore — RF-30. Cualquier miembro de la lista. */
+export function restoreTask(taskId: Id): Promise<Task> {
+  return request<Task>(`/tasks/${taskId}/restore`, { method: "POST" });
 }
 
 /**

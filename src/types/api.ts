@@ -23,9 +23,11 @@ export type User = {
   email_verified: boolean;
 };
 
-/** GET /me/settings — interruptor único de avisos (RF-36). */
+/** GET /me/settings — interruptor único de avisos (RF-36) y antelación (RF-27). */
 export type Settings = {
   notifications_enabled: boolean;
+  /** Días con los que una tarea cuenta como «próxima a vencer» (1 a 14; 2 por defecto). */
+  due_soon_days: number;
 };
 
 export type TaskList = {
@@ -36,6 +38,8 @@ export type TaskList = {
   owner_id: Id;
   /** Lista personal por defecto «Mis tareas», creada al registrarse (modelo v0.6). */
   is_default: boolean;
+  /** RF-28: las tareas nuevas, y las que se editen, necesitan fecha límite. */
+  due_date_required: boolean;
 };
 
 /** Lista con el resumen que muestra WF-002 Mis listas (GET /lists). */
@@ -61,7 +65,8 @@ export type Task = {
   /** Fecha sin hora, `AAAA-MM-DD`. */
   due_date: string | null;
   status: TaskStatus;
-  creator_id: Id;
+  /** null si quien la creó eliminó su cuenta (RF-07). */
+  creator_id: Id | null;
   /** Sin duplicados y ordenados. */
   assignee_ids: Id[];
   completed_at: string | null;
@@ -132,8 +137,14 @@ export type Dashboard = {
   overdue: DashboardTask[];
 };
 
-/** GET /dashboard/stats — RF-39. Semana de lunes a domingo. */
-export type WeekStats = { week_start: string; created: number; completed: number };
+/**
+ * GET /dashboard/stats — RF-39. Semana de lunes a domingo. RF-40: `open`,
+ * pendientes al acabar la semana; `actions`, entradas del historial de mis listas.
+ */
+export type WeekStats = { week_start: string; created: number; completed: number; open: number; actions: number };
+
+/** RF-40: actividad de una persona en el periodo; sin nombre si eliminó su cuenta. */
+export type ContributorStats = { user_id: Id | null; username: string | null; actions: number; completed: number };
 
 export type ListStats = { list_id: Id; list_name: string; total: number; done: number };
 
@@ -150,6 +161,7 @@ export type Stats = {
   status: StatusCounts;
   weeks: WeekStats[];
   by_list: ListStats[];
+  contributors: ContributorStats[];
 };
 
 export type StatsQuery = { scope?: MyTasksScope; list_id?: Id; start?: string; end?: string };
@@ -159,19 +171,23 @@ export type ActivityAction =
   | "task_updated"
   | "task_status_changed"
   | "task_deleted"
+  | "task_restored"
   | "member_joined"
   | "member_left"
   | "member_removed"
   | "owner_changed"
-  | "list_updated";
+  | "list_updated"
+  | "list_deleted"
+  | "list_restored";
 
 /** GET /lists/{list_id}/activity — RF-31. */
 export type Activity = {
   id: Id;
   action: ActivityAction;
-  actor_id: Id;
-  actor_username: string;
-  /** null si la tarea se borró (el título queda guardado). */
+  /** null si esa persona eliminó su cuenta (RF-07). */
+  actor_id: Id | null;
+  actor_username: string | null;
+  /** null si la tarea se borró o está en la papelera (el título queda guardado). */
   task_id: Id | null;
   task_title: string | null;
   target_user_id: Id | null;
@@ -179,6 +195,37 @@ export type Activity = {
   /** Estado nuevo en `task_status_changed`. */
   detail: TaskStatus | null;
   created_at: string;
+};
+
+/** GET /trash — RF-18, RF-30. Lo más reciente primero. */
+export type TrashList = {
+  id: Id;
+  name: string;
+  list_type: ListType;
+  /** Tareas que vuelven con la lista. */
+  task_count: number;
+  deleted_at: string;
+  /** Cuándo se borra de forma definitiva. */
+  purge_at: string;
+};
+
+export type TrashTask = {
+  id: Id;
+  title: string;
+  list_id: Id;
+  list_name: string;
+  deleted_at: string;
+  purge_at: string;
+  deleted_by_id: Id | null;
+  deleted_by_username: string | null;
+};
+
+export type Trash = {
+  retention_days: number;
+  /** Solo mis listas (solo su propietario las recupera). */
+  lists: TrashList[];
+  /** Tareas borradas de las listas de las que soy miembro. */
+  tasks: TrashTask[];
 };
 
 /* ---------- Cuerpos de petición ---------- */
@@ -207,10 +254,12 @@ export type ListCreateInput = {
   name: string;
   description: string | null;
   list_type: ListType;
+  /** RF-28; por defecto, false. */
+  due_date_required?: boolean;
 };
 
 /**
- * PATCH /lists/{list_id} — RF-16. Solo el propietario; solo cambian los campos
+ * PATCH /lists/{list_id} — RF-16, RF-28. Solo el propietario; solo cambian los campos
  * enviados. `list_type` solo admite pasar de «personal» a «shared».
  */
 export type ListUpdateInput = Partial<ListCreateInput>;

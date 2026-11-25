@@ -67,7 +67,12 @@ export function getSettings(): Promise<Settings> {
   return request<Settings>("/me/settings");
 }
 
-/** PATCH /me/settings — RF-36: interruptor único de avisos. */
-export function updateSettings(input: Settings): Promise<Settings> {
+/** POST /me/delete — RF-07: elimina la cuenta (409 `owns_shared_lists` si aún tiene listas compartidas). */
+export function deleteAccount(currentPassword: string): Promise<void> {
+  return request<void>("/me/delete", { method: "POST", body: { current_password: currentPassword } });
+}
+
+/** PATCH /me/settings — RF-36 y RF-27: solo cambian los campos enviados. */
+export function updateSettings(input: Partial<Settings>): Promise<Settings> {
   return request<Settings>("/me/settings", { method: "PATCH", body: input });
 }

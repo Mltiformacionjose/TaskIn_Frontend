@@ -1,4 +1,4 @@
-import type { Activity, Id, ListCreateInput, ListMember, ListSummary, ListUpdateInput, TaskList } from "@/types/api";
+import type { Activity, Id, ListCreateInput, ListMember, ListSummary, ListUpdateInput, TaskList, Trash } from "@/types/api";
 import { request } from "./http";
 
 /** GET /lists — RF-10. Listas propias y compartidas conmigo, incluida «Mis tareas», con su resumen. */
@@ -31,9 +31,19 @@ export function transferList(listId: Id, userId: Id): Promise<TaskList> {
   return request<TaskList>(`/lists/${listId}/transfer`, { method: "POST", body: { user_id: userId } });
 }
 
-/** DELETE /lists/{list_id} — RF-17. Solo el propietario; «Mis tareas» no se borra (409). */
+/** DELETE /lists/{list_id} — RF-17, RF-18. Solo el propietario; va a la papelera 30 días. «Mis tareas» no se borra (409). */
 export function deleteList(listId: Id): Promise<void> {
   return request<void>(`/lists/${listId}`, { method: "DELETE" });
+}
+
+/** POST /lists/{list_id}/restore — RF-18. Solo su propietario; vuelve con todo. */
+export function restoreList(listId: Id): Promise<TaskList> {
+  return request<TaskList>(`/lists/${listId}/restore`, { method: "POST" });
+}
+
+/** GET /trash — RF-18, RF-30. Mis listas borradas y las tareas borradas de mis listas. */
+export function getTrash(): Promise<Trash> {
+  return request<Trash>("/trash");
 }
 
 /** GET /lists/{list_id}/members — RF-24. Propietario primero. */
