@@ -19,6 +19,7 @@ import { useLoad } from "@/hooks/use-load";
 import { deleteList, getList, getMembers, leaveList } from "@/services/lists";
 import { getTasks } from "@/services/tasks";
 import type { ListMember, Task, TaskList, TaskStatus } from "@/types/api";
+import { ActivityPanel } from "./activity-panel";
 import { EditListDialog } from "./edit-list-dialog";
 import { LIST_TYPE_LABEL, plural } from "./list-summary";
 
@@ -55,6 +56,8 @@ export function ListDetailScreen({ listId }: { listId: number }) {
   const [assignee, setAssignee] = useState<AssigneeFilter>("all");
   const [view, setView] = useState<TaskView>("list");
   const [actionError, setActionError] = useState<string | null>(null);
+  // Cambia con cada modificación para recargar el historial (RF-31).
+  const [version, setVersion] = useState(0);
 
   const { load, reload } = useLoad<Data>(
     () =>
@@ -72,6 +75,7 @@ export function ListDetailScreen({ listId }: { listId: number }) {
     setActionError(error ?? null);
     reload();
     filtered.reload();
+    setVersion((v) => v + 1);
   };
 
   return (
@@ -243,6 +247,7 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                     ))}
                   </ul>
                 </Panel>
+                <ActivityPanel listId={list.id} refreshKey={version} />
                 <Panel title="Detalles de la lista">
                   <p className="text-sm leading-relaxed text-muted">
                     Propietario: {owner ? (owner.user_id === user.id ? "Tú" : owner.username) : "—"}

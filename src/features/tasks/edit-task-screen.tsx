@@ -10,12 +10,13 @@ import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { formatDate } from "@/lib/dates";
 import { ApiError } from "@/services/errors";
-import { getList, getMembers } from "@/services/lists";
+import { getActivity, getList, getMembers } from "@/services/lists";
 import { deleteTask, getTask } from "@/services/tasks";
-import type { ListMember, Task, TaskList } from "@/types/api";
+import { ActivityList } from "@/features/lists/activity-panel";
+import type { Activity, ListMember, Task, TaskList } from "@/types/api";
 import { TaskForm } from "./task-form";
 
-type Data = { list: TaskList; members: ListMember[]; task: Task };
+type Data = { list: TaskList; members: ListMember[]; task: Task; history: Activity[] };
 
 /**
  * WF-004 en modo edición (RF-19, RF-22, RF-24): el mismo formulario, con los
@@ -28,10 +29,15 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
   const router = useRouter();
   const { load, reload } = useLoad<Data>(
     () =>
-      Promise.all([getList(listId), getMembers(listId), getTask(taskId)]).then(([list, members, task]) => {
+      Promise.all([
+        getList(listId),
+        getMembers(listId),
+        getTask(taskId),
+        getActivity(listId, { taskId, limit: 50 }),
+      ]).then(([list, members, task, history]) => {
         // La dirección mezcla una lista y una tarea de otra lista: se trata como inexistente.
         if (task.list_id !== list.id) throw new ApiError(404, "not_found", "La tarea no existe o no tienes acceso a ella.");
-        return { list, members, task };
+        return { list, members, task, history };
       }),
     `${listId}/${taskId}`,
   );
@@ -40,7 +46,7 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
 
   return (
     <LoadState load={load} loading="Cargando tarea…" onRetry={reload}>
-      {({ list, members, task }) => {
+      {({ list, members, task, history }) => {
         const creator = members.find((m) => m.user_id === task.creator_id);
         return (
           <>
@@ -87,22 +93,28 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
                   onReload={reload}
                 />
               </Panel>
-              <Panel title="Datos de la tarea">
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
-                  <dt className="text-muted">Lista</dt>
-                  <dd>{list.name}</dd>
-                  <dt className="text-muted">Creada por</dt>
-                  <dd>{creator ? (creator.user_id === user.id ? "Ti" : creator.username) : "Una persona que ya no participa"}</dd>
-                  <dt className="text-muted">Creada el</dt>
-                  <dd>{formatDate(task.created_at)}</dd>
-                  {task.completed_at && (
-                    <>
-                      <dt className="text-muted">Completada el</dt>
-                      <dd>{formatDate(task.completed_at)}</dd>
-                    </>
-                  )}
-                </dl>
-              </Panel>
+              <div className="flex flex-col gap-5">
+                <Panel title="Datos de la tarea">
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
+                    <dt className="text-muted">Lista</dt>
+                    <dd>{list.name}</dd>
+                    <dt className="text-muted">Creada por</dt>
+                    <dd>{creator ? (creator.user_id === user.id ? "Ti" : creator.username) : "Una persona que ya no participa"}</dd>
+                    <dt className="text-muted">Creada el</dt>
+                    <dd>{formatDate(task.created_at)}</dd>
+                    {task.completed_at && (
+                      <>
+                        <dt className="text-muted">Completada el</dt>
+                        <dd>{formatDate(task.completed_at)}</dd>
+                      </>
+                    )}
+                  </dl>
+                </Panel>
+                {/* RF-31 y RF-32: quién cambió la tarea y su estado, y cuándo. */}
+                <Panel title="Historial" description="Cambios de esta tarea, del más reciente al más antiguo.">
+                  <ActivityList entries={history} listId={list.id} empty="Sin cambios registrados." />
+                </Panel>
+              </div>
             </div>
           </>
         );
