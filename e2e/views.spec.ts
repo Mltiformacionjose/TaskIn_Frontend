@@ -37,7 +37,8 @@ test("calendario: cada tarea en su día, las sin fecha debajo y navegación por 
   await expect(page.getByText("Sin fecha de vencimiento:")).toContainText("Idea sin fecha");
 
   await page.getByRole("button", { name: "Mes siguiente" }).click();
-  await expect(page.getByRole("link", { name: "Entrega parcial" })).toHaveCount(0);
+  // Solo en el calendario: el panel «Actividad reciente» también enlaza a la tarea.
+  await expect(page.getByRole("table", { name: /^Calendario de / }).getByRole("link", { name: "Entrega parcial" })).toHaveCount(0);
   await page.getByRole("button", { name: "Hoy" }).click();
   await expect(page.getByRole("table", { name: `Calendario de ${title}` })).toBeVisible();
 });
