@@ -35,7 +35,7 @@ export function VerifyEmailBanner() {
       className="mb-6 flex flex-wrap items-center gap-3 rounded-panel border border-warning/40 bg-warning-soft px-4 py-3 text-sm"
     >
       <p className="min-w-0 flex-1">
-        Confirma tu correo <strong>{user.email}</strong> con el enlace que te enviamos.
+        Confirma tu correo <strong className="break-all">{user.email}</strong> con el enlace que te enviamos.
         {message && (
           <span role={message.ok ? "status" : "alert"} className={message.ok ? "block text-muted" : "block text-danger-text"}>
             {message.text}

@@ -73,35 +73,41 @@ function Legend({ items }: { items: { label: string; color: string }[] }) {
 /** Barras por semana: creadas y completadas. Los datos también van en una tabla para lectores de pantalla. */
 function WeeklyChart({ weeks }: { weeks: WeekStats[] }) {
   const max = Math.max(1, ...weeks.flatMap((w) => [w.created, w.completed]));
-  const height = 160;
-  const slot = 34;
-  const bar = 12;
-  const width = Math.max(weeks.length * slot, 1);
+  // Lienzo fijo que se escala al ancho del panel; las barras se reparten en él.
+  const width = 640;
+  const height = 180;
+  const left = 24;
+  const top = 12;
+  const slot = (width - left) / Math.max(weeks.length, 1);
+  const bar = Math.min(16, slot * 0.32);
+  const every = Math.ceil(weeks.length / 9); // como mucho 9 etiquetas de semana
+  const scale = (value: number) => (value / max) * (height - top);
   return (
     <>
-      <div className="overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height + 22}`}
-          width={width}
-          height={height + 22}
-          aria-hidden="true"
-          className="min-w-full"
-        >
-          <line x1="0" x2={width} y1={height} y2={height} stroke="var(--line)" />
+      <div>
+        <svg viewBox={`0 0 ${width} ${height + 24}`} aria-hidden="true" className="h-auto w-full">
+          <line x1={left} x2={width} y1={top} y2={top} stroke="var(--line)" strokeDasharray="3 4" />
+          <text x={left - 6} y={top + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+            {max}
+          </text>
+          <text x={left - 6} y={height + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+            0
+          </text>
+          <line x1={left} x2={width} y1={height} y2={height} stroke="var(--line)" />
           {weeks.map((w, i) => {
-            const x = i * slot + (slot - bar * 2 - 2) / 2;
-            const created = (w.created / max) * (height - 8);
-            const completed = (w.completed / max) * (height - 8);
+            const x = left + i * slot + (slot - bar * 2 - 3) / 2;
+            const created = scale(w.created);
+            const completed = scale(w.completed);
             return (
               <g key={w.week_start}>
                 <rect x={x} y={height - created} width={bar} height={created} rx="2" fill={CREATED_COLOR}>
                   <title>{`Semana del ${formatShortDate(w.week_start)}: ${w.created} creadas`}</title>
                 </rect>
-                <rect x={x + bar + 2} y={height - completed} width={bar} height={completed} rx="2" fill={COMPLETED_COLOR}>
+                <rect x={x + bar + 3} y={height - completed} width={bar} height={completed} rx="2" fill={COMPLETED_COLOR}>
                   <title>{`Semana del ${formatShortDate(w.week_start)}: ${w.completed} completadas`}</title>
                 </rect>
-                {(i % 2 === 0 || weeks.length <= 8) && (
-                  <text x={i * slot + slot / 2} y={height + 15} textAnchor="middle" fontSize="9" fill="var(--muted)">
+                {i % every === 0 && (
+                  <text x={left + i * slot + slot / 2} y={height + 18} textAnchor="middle" fontSize="11" fill="var(--muted)">
                     {formatShortDate(w.week_start)}
                   </text>
                 )}
@@ -143,9 +149,9 @@ function StatusBar({ stats }: { stats: Stats }) {
           <span key={s} style={{ width: `${(stats.status[s] / total) * 100}%`, background: STATUS_COLOR[s] }} />
         ))}
       </div>
-      <ul className="grid gap-1.5 text-sm sm:grid-cols-3">
+      <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
         {STATUS_ORDER.map((s) => (
-          <li key={s} className="flex items-center gap-2">
+          <li key={s} className="flex items-center gap-2 whitespace-nowrap">
             <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ background: STATUS_COLOR[s] }} />
             {TASK_STATUS[s].label}: <strong>{stats.status[s]}</strong>
           </li>
@@ -207,7 +213,7 @@ export function StatsScreen() {
       <Panel className="mb-5">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Segmented label="Periodo" value={period} onChange={setPeriod} options={PERIODS} />
+            <Segmented label="Periodo" value={period} onChange={setPeriod} options={PERIODS} className="flex-wrap" />
             {period === "custom" && (
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <label className="flex items-center gap-2">
@@ -234,7 +240,7 @@ export function StatsScreen() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Segmented label="Alcance" value={scope} onChange={setScope} options={SCOPES} />
+            <Segmented label="Alcance" value={scope} onChange={setScope} options={SCOPES} className="flex-wrap" />
             <select
               aria-label="Lista"
               value={listId}
