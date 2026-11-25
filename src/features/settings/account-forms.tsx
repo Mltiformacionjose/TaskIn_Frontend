@@ -79,6 +79,13 @@ export function ProfileForm() {
           maxLength={LIMITS.emailMax}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          hint={
+            emailChanges
+              ? "Te enviaremos un enlace para confirmar el correo nuevo."
+              : user.email_verified
+                ? "✓ Correo confirmado."
+                : "Sin confirmar: revisa tu bandeja o pide otro enlace en el aviso de arriba."
+          }
           error={state.errors.email}
           required
         />
