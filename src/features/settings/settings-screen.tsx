@@ -10,7 +10,7 @@ import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { cn } from "@/lib/cn";
 import { getSettings, updateSettings } from "@/services/auth";
-import { PasswordForm, ProfileForm } from "./account-forms";
+import { DeleteAccountForm, PasswordForm, ProfileForm } from "./account-forms";
 import { errorMessage } from "@/services/errors";
 import type { Settings } from "@/types/api";
 
@@ -73,7 +73,64 @@ function NotificationsSwitch({ initial }: { initial: Settings }) {
   );
 }
 
-/** WF-010 Ajustes (RF-02, RF-04, RF-05, RF-36): avisos, datos de la cuenta, contraseña y sesión. */
+const DUE_SOON_OPTIONS = [1, 2, 3, 5, 7, 10, 14];
+
+/** RF-27: con cuántos días de antelación una tarea cuenta como «próxima a vencer». */
+function DueSoonSetting({ initial }: { initial: Settings }) {
+  const [days, setDays] = useState(initial.due_soon_days);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<{ tone: "danger" | "success"; text: string } | null>(null);
+  const options = DUE_SOON_OPTIONS.includes(days) ? DUE_SOON_OPTIONS : [...DUE_SOON_OPTIONS, days].sort((a, b) => a - b);
+
+  const change = async (next: number) => {
+    const previous = days;
+    setDays(next);
+    setPending(true);
+    setMessage(null);
+    try {
+      const saved = await updateSettings({ due_soon_days: next });
+      setDays(saved.due_soon_days);
+      setMessage({ tone: "success", text: "Antelación guardada." });
+    } catch (error) {
+      setDays(previous);
+      setMessage({ tone: "danger", text: errorMessage(error) });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="mt-5 border-t border-line pt-5">
+      {message && <Alert tone={message.tone}>{message.text}</Alert>}
+      <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-3">
+        <div className="min-w-0 flex-1 basis-60">
+          <label htmlFor="due-soon-days" className="text-sm font-semibold">
+            Antelación de «próximas a vencer»
+          </label>
+          <p id="due-soon-hint" className="mt-1 text-xs leading-normal text-muted">
+            Las tareas que vencen hoy o en estos días aparecen en «Próximas tareas» del inicio.
+          </p>
+        </div>
+        <select
+          id="due-soon-days"
+          aria-describedby="due-soon-hint"
+          value={days}
+          disabled={pending}
+          onChange={(e) => change(Number(e.target.value))}
+          className="rounded-lg border border-line bg-panel-2 px-3.5 py-2.5 text-sm text-fg outline-none focus-visible:border-accent disabled:opacity-60"
+        >
+          {options.map((value) => (
+            <option key={value} value={value}>
+              {value === 1 ? "1 día" : `${value} días`}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+/** WF-010 Ajustes (RF-02, RF-04, RF-05, RF-07, RF-27, RF-36): avisos, vencimientos, cuenta, contraseña, sesión y baja. */
 export function SettingsScreen() {
   const { logout } = useSession();
   const { load, reload } = useLoad(getSettings);
@@ -84,7 +141,12 @@ export function SettingsScreen() {
       <div className="grid max-w-3xl gap-5">
         <Panel title="Notificaciones" description="Controla cómo recibes avisos relacionados con tus listas y tareas.">
           <LoadState load={load} loading="Cargando ajustes…" onRetry={reload}>
-            {(settings) => <NotificationsSwitch initial={settings} />}
+            {(settings) => (
+              <>
+                <NotificationsSwitch initial={settings} />
+                <DueSoonSetting initial={settings} />
+              </>
+            )}
           </LoadState>
         </Panel>
         <Panel title="Cuenta" description="Tu nombre de usuario y el correo con el que entras.">
@@ -110,6 +172,9 @@ export function SettingsScreen() {
               Cerrar sesión
             </Button>
           </div>
+        </Panel>
+        <Panel title="Eliminar la cuenta" description="Borra tu cuenta de TaskIn de forma definitiva.">
+          <DeleteAccountForm />
         </Panel>
       </div>
     </>

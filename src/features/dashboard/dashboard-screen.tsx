@@ -15,12 +15,13 @@ import { TASK_STATUS } from "@/features/tasks/status";
 import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
 import { formatShortDate } from "@/lib/dates";
+import { getSettings } from "@/services/auth";
 import { getDashboard } from "@/services/dashboard";
 import { getLists } from "@/services/lists";
 import { getMyTasks } from "@/services/tasks";
 import type { Dashboard, DashboardTask, ListSummary, MyTasksScope, StatusCounts } from "@/types/api";
 
-type Data = { dashboard: Dashboard; lists: ListSummary[] };
+type Data = { dashboard: Dashboard; lists: ListSummary[]; dueSoonDays: number };
 
 function StatCard({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "danger" }) {
   return (
@@ -127,13 +128,18 @@ function MyTasksPanel({ onChanged }: { onChanged: () => void }) {
 
 /**
  * WF-001 Dashboard (RF-26, RF-37, RF-38): totales de mis tareas (asignadas a
- * mí y las de mis listas personales), próximas (2 días) y vencidas, y el
+ * mí y las de mis listas personales), próximas (según la antelación de
+ * Ajustes, 2 días por defecto; RF-27) y vencidas, y el
  * resumen de creadas y asignadas. Sin periodo (P-10).
  */
 export function DashboardScreen() {
   const { user } = useSession();
   const { load, reload } = useLoad<Data>(() =>
-    Promise.all([getDashboard(), getLists()]).then(([dashboard, lists]) => ({ dashboard, lists })),
+    Promise.all([getDashboard(), getLists(), getSettings()]).then(([dashboard, lists, settings]) => ({
+      dashboard,
+      lists,
+      dueSoonDays: settings.due_soon_days,
+    })),
   );
 
   const defaultList = load.status === "ready" ? load.data.lists.find((l) => l.is_default) : undefined;
@@ -149,7 +155,7 @@ export function DashboardScreen() {
         }
       />
       <LoadState load={load} loading="Cargando resumen…" onRetry={reload}>
-        {({ dashboard, lists }) => (
+        {({ dashboard, lists, dueSoonDays }) => (
           <div className="flex flex-col gap-5">
             <section aria-label="Totales de mis tareas" className="grid gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
               <StatCard label="Por hacer" value={dashboard.assigned.todo} hint="Tareas pendientes" />
@@ -161,7 +167,10 @@ export function DashboardScreen() {
             <MyTasksPanel onChanged={reload} />
 
             <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
-              <Panel title="Próximas tareas" description="Vencen hoy o en los próximos 2 días.">
+              <Panel
+                title="Próximas tareas"
+                description={`Vencen hoy o ${dueSoonDays === 1 ? "mañana" : `en los próximos ${dueSoonDays} días`}. Cámbialo en Ajustes.`}
+              >
                 <TaskRows tasks={dashboard.upcoming} empty="No tienes tareas que venzan en los próximos días." />
               </Panel>
               <Panel title="Vencidas" description="Con fecha anterior a hoy y sin terminar.">

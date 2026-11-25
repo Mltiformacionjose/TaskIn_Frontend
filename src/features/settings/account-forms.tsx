@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
 import { useSession } from "@/features/auth/session-provider";
 import { LIMITS, hasErrors, validateNewPassword, validateProfile } from "@/lib/validation";
-import { changePassword, updateProfile } from "@/services/auth";
+import { changePassword, deleteAccount, updateProfile } from "@/services/auth";
 import { ApiError, errorMessage } from "@/services/errors";
 
 type ProfileState = {
@@ -183,6 +184,55 @@ export function PasswordForm() {
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           {pending ? "Cambiando…" : "Cambiar contraseña"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+type DeleteState = { error?: string; formError?: string };
+
+/**
+ * RF-07: eliminar la cuenta con la contraseña actual. Si aún es propietaria de
+ * listas compartidas, el backend responde 409 con sus nombres: hay que
+ * transferirlas o eliminarlas antes.
+ */
+export function DeleteAccountForm() {
+  const router = useRouter();
+  const [state, formAction, pending] = useActionState<DeleteState, FormData>(async (_prev, formData) => {
+    const password = String(formData.get("current_password") ?? "");
+    if (!password) return { error: "Escribe tu contraseña actual para confirmar." };
+    try {
+      await deleteAccount(password);
+    } catch (err) {
+      if (err instanceof ApiError && err.fields.includes("current_password")) return { error: errorMessage(err) };
+      return { formError: errorMessage(err) };
+    }
+    router.replace("/account-deleted");
+    return {};
+  }, {});
+
+  return (
+    <form action={formAction} noValidate>
+      {state.formError && <Alert>{state.formError}</Alert>}
+      <ul className="mb-4 list-disc pl-5 text-xs leading-relaxed text-muted">
+        <li>Se borran tu cuenta, tus listas personales (con sus tareas), lo que tengas en la papelera y tus avisos.</li>
+        <li>Dejas de participar en las listas de otras personas; las tareas que creaste allí siguen, sin tu nombre.</li>
+        <li>Si eres propietario de listas compartidas, antes tienes que transferirlas o eliminarlas.</li>
+        <li>No se puede deshacer.</li>
+      </ul>
+      <TextField
+        label="Contraseña actual"
+        name="current_password"
+        type="password"
+        autoComplete="current-password"
+        maxLength={LIMITS.passwordMax}
+        error={state.error}
+        required
+      />
+      <div className="flex justify-end">
+        <Button type="submit" variant="danger" disabled={pending}>
+          {pending ? "Eliminando…" : "Eliminar mi cuenta"}
         </Button>
       </div>
     </form>
