@@ -9,6 +9,7 @@ import { LIMITS, hasErrors, validateListCreate, type FieldErrors } from "@/lib/v
 import { ApiError, errorMessage } from "@/services/errors";
 import { createList } from "@/services/lists";
 import type { ListCreateInput, ListType, TaskList } from "@/types/api";
+import { DueDateRequiredOption } from "./due-date-option";
 
 type FormState = {
   values: ListCreateInput;
@@ -16,7 +17,7 @@ type FormState = {
   formError?: string;
 };
 
-const emptyValues: ListCreateInput = { name: "", description: null, list_type: "personal" };
+const emptyValues: ListCreateInput = { name: "", description: null, list_type: "personal", due_date_required: false };
 const FIELDS: (keyof ListCreateInput)[] = ["name", "description", "list_type"];
 
 const TYPES: { value: ListType; label: string; hint: string }[] = [
@@ -31,6 +32,7 @@ function ListForm({ onCreated, onCancel }: { onCreated: (list: TaskList) => void
         name: String(formData.get("name") ?? ""),
         description: String(formData.get("description") ?? "") || null,
         list_type: formData.get("list_type") === "shared" ? "shared" : "personal",
+        due_date_required: formData.get("due_date_required") === "on",
       };
       const errors = validateListCreate(values);
       if (hasErrors(errors)) return { values, errors };
@@ -99,6 +101,7 @@ function ListForm({ onCreated, onCancel }: { onCreated: (list: TaskList) => void
           </p>
         )}
       </fieldset>
+      <DueDateRequiredOption defaultChecked={Boolean(state.values.due_date_required)} />
       <div className="mt-2.5 flex justify-end gap-2.5 border-t border-line pt-[18px]">
         <Button variant="ghost" onClick={onCancel}>
           Cancelar

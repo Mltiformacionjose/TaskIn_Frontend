@@ -45,11 +45,13 @@ type TaskFormProps = {
  * Formulario de WF-004, para crear y para editar. Al crear, el estado inicial
  * lo fija el backend («Por hacer», CA-20); al editar se puede cambiar
  * libremente (RF-22). Los responsables solo aparecen en listas compartidas y
- * solo se puede elegir a miembros de la lista (CA-08, CA-17, CA-18).
+ * solo se puede elegir a miembros de la lista (CA-08, CA-17, CA-18). Si la
+ * lista exige fecha límite (RF-28), la fecha es obligatoria.
  */
 export function TaskForm({ list, members, currentUserId, task, onSaved, onReload }: TaskFormProps) {
   const shared = list.list_type === "shared";
   const editing = task !== undefined;
+  const dateRequired = list.due_date_required;
   const initialValues: TaskValues = task
     ? {
         title: task.title,
@@ -71,6 +73,8 @@ export function TaskForm({ list, members, currentUserId, task, onSaved, onReload
         status: isStatus(status) ? status : initialValues.status,
       };
       const errors = validateTaskCreate(values);
+      // RF-28: la lista exige fecha (el backend también lo comprueba).
+      if (dateRequired && !values.due_date) errors.due_date = "Esta lista exige fecha límite en cada tarea.";
       if (hasErrors(errors)) return { values, errors };
       try {
         const { status: newStatus, ...fields } = values;
@@ -127,13 +131,20 @@ export function TaskForm({ list, members, currentUserId, task, onSaved, onReload
       />
       <div className="grid gap-[18px] md:grid-cols-2">
         <TextField
-          label="Fecha de vencimiento"
-          optional
+          label={dateRequired ? "Fecha de vencimiento *" : "Fecha de vencimiento"}
+          optional={!dateRequired}
           name="due_date"
           type="date"
           defaultValue={state.values.due_date ?? ""}
-          hint={editing ? "Déjala vacía para quitar la fecha." : "Puedes crear tareas sin fecha y añadirla más adelante."}
+          hint={
+            dateRequired
+              ? "Esta lista exige fecha límite en cada tarea."
+              : editing
+                ? "Déjala vacía para quitar la fecha."
+                : "Puedes crear tareas sin fecha y añadirla más adelante."
+          }
           error={state.errors.due_date}
+          required={dateRequired}
         />
         {editing ? (
           <div className="mb-[19px]">

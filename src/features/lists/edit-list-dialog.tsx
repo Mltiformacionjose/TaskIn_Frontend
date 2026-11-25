@@ -8,6 +8,7 @@ import { LIMITS, hasErrors, validateListCreate, type FieldErrors } from "@/lib/v
 import { ApiError, errorMessage } from "@/services/errors";
 import { updateList } from "@/services/lists";
 import type { ListCreateInput, TaskList } from "@/types/api";
+import { DueDateRequiredOption } from "./due-date-option";
 
 type FormState = {
   values: ListCreateInput;
@@ -20,7 +21,12 @@ const FIELDS: (keyof ListCreateInput)[] = ["name", "description", "list_type"];
 function EditListForm({ list, onSaved, onCancel }: { list: TaskList; onSaved: (list: TaskList) => void; onCancel: () => void }) {
   // RF-16: una lista personal (que no sea «Mis tareas») puede pasar a compartida; no al revés.
   const canShare = list.list_type === "personal" && !list.is_default;
-  const initial: ListCreateInput = { name: list.name, description: list.description, list_type: list.list_type };
+  const initial: ListCreateInput = {
+    name: list.name,
+    description: list.description,
+    list_type: list.list_type,
+    due_date_required: list.due_date_required,
+  };
 
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     async (_prev, formData) => {
@@ -28,11 +34,13 @@ function EditListForm({ list, onSaved, onCancel }: { list: TaskList; onSaved: (l
         name: String(formData.get("name") ?? ""),
         description: String(formData.get("description") ?? "") || null,
         list_type: canShare && formData.get("make_shared") === "on" ? "shared" : list.list_type,
+        due_date_required: formData.get("due_date_required") === "on",
       };
       const errors = validateListCreate(values);
       if (hasErrors(errors)) return { values, errors };
       try {
-        const changes = values.list_type === list.list_type ? { name: values.name, description: values.description } : values;
+        const { list_type, ...rest } = values;
+        const changes = list_type === list.list_type ? rest : values;
         onSaved(await updateList(list.id, changes));
         return { values, errors: {} };
       } catch (error) {
@@ -85,6 +93,7 @@ function EditListForm({ list, onSaved, onCancel }: { list: TaskList; onSaved: (l
           {state.errors.list_type}
         </p>
       )}
+      <DueDateRequiredOption defaultChecked={Boolean(state.values.due_date_required)} />
       <div className="mt-2.5 flex justify-end gap-2.5 border-t border-line pt-[18px]">
         <Button variant="ghost" onClick={onCancel}>
           Cancelar
@@ -98,8 +107,9 @@ function EditListForm({ list, onSaved, onCancel }: { list: TaskList; onSaved: (l
 }
 
 /**
- * Botón «Editar lista» y su diálogo (RF-16). Solo lo ve el propietario:
- * nombre, descripción y, en una lista personal, convertirla en compartida.
+ * Botón «Editar lista» y su diálogo (RF-16, RF-28). Solo lo ve el propietario:
+ * nombre, descripción, exigir fecha límite y, en una lista personal,
+ * convertirla en compartida.
  */
 export function EditListDialog({ list, onSaved }: { list: TaskList; onSaved: (list: TaskList) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -124,7 +134,7 @@ export function EditListDialog({ list, onSaved }: { list: TaskList; onSaved: (li
         <h2 id="edit-list-title" className="mb-1.5 text-xl font-bold">
           Editar lista
         </h2>
-        <p className="mb-6 text-sm leading-normal text-muted">Cambia el nombre, la descripción o el tipo de la lista.</p>
+        <p className="mb-6 text-sm leading-normal text-muted">Cambia el nombre, la descripción, el tipo o si exige fecha límite.</p>
         <EditListForm
           key={formKey}
           list={list}
