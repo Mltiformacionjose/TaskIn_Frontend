@@ -19,6 +19,8 @@ export type User = {
   id: Id;
   username: string;
   email: string;
+  /** RF-06: el correo actual está verificado. No bloquea el acceso. */
+  email_verified: boolean;
 };
 
 /** GET /me/settings — interruptor único de avisos (RF-36). */
@@ -128,6 +130,55 @@ export type Dashboard = {
   created: StatusCounts;
   upcoming: DashboardTask[];
   overdue: DashboardTask[];
+};
+
+/** GET /dashboard/stats — RF-39. Semana de lunes a domingo. */
+export type WeekStats = { week_start: string; created: number; completed: number };
+
+export type ListStats = { list_id: Id; list_name: string; total: number; done: number };
+
+export type Stats = {
+  start: string;
+  end: string;
+  list_id: Id | null;
+  created: number;
+  completed: number;
+  /** Con fecha límite en el periodo: completadas a tiempo / tarde o sin hacer tras vencer. */
+  on_time: number;
+  late: number;
+  completion_rate: number | null;
+  status: StatusCounts;
+  weeks: WeekStats[];
+  by_list: ListStats[];
+};
+
+export type StatsQuery = { scope?: MyTasksScope; list_id?: Id; start?: string; end?: string };
+
+export type ActivityAction =
+  | "task_created"
+  | "task_updated"
+  | "task_status_changed"
+  | "task_deleted"
+  | "member_joined"
+  | "member_left"
+  | "member_removed"
+  | "owner_changed"
+  | "list_updated";
+
+/** GET /lists/{list_id}/activity — RF-31. */
+export type Activity = {
+  id: Id;
+  action: ActivityAction;
+  actor_id: Id;
+  actor_username: string;
+  /** null si la tarea se borró (el título queda guardado). */
+  task_id: Id | null;
+  task_title: string | null;
+  target_user_id: Id | null;
+  target_username: string | null;
+  /** Estado nuevo en `task_status_changed`. */
+  detail: TaskStatus | null;
+  created_at: string;
 };
 
 /* ---------- Cuerpos de petición ---------- */

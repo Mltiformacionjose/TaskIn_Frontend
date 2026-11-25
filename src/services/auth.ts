@@ -52,6 +52,16 @@ export function changePassword(input: PasswordChangeInput): Promise<void> {
   return request<void>("/me/password", { method: "POST", body: input });
 }
 
+/** POST /auth/verify-email — RF-06: confirma el correo con el enlace (no hace falta sesión). */
+export function verifyEmail(token: string): Promise<void> {
+  return request<void>("/auth/verify-email", { method: "POST", body: { token } });
+}
+
+/** POST /me/verify-email — RF-06: envía otro enlace (5 por hora; 409 si ya está verificado). */
+export function resendVerification(): Promise<void> {
+  return request<void>("/me/verify-email", { method: "POST" });
+}
+
 /** GET /me/settings — RF-36. */
 export function getSettings(): Promise<Settings> {
   return request<Settings>("/me/settings");

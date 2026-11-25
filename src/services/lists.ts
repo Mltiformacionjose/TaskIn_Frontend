@@ -1,4 +1,4 @@
-import type { Id, ListCreateInput, ListMember, ListSummary, ListUpdateInput, TaskList } from "@/types/api";
+import type { Activity, Id, ListCreateInput, ListMember, ListSummary, ListUpdateInput, TaskList } from "@/types/api";
 import { request } from "./http";
 
 /** GET /lists — RF-10. Listas propias y compartidas conmigo, incluida «Mis tareas», con su resumen. */
@@ -39,4 +39,13 @@ export function deleteList(listId: Id): Promise<void> {
 /** GET /lists/{list_id}/members — RF-24. Propietario primero. */
 export function getMembers(listId: Id): Promise<ListMember[]> {
   return request<ListMember[]>(`/lists/${listId}/members`);
+}
+
+/** GET /lists/{list_id}/activity — RF-31. Del más reciente al más antiguo; con `taskId`, solo esa tarea. */
+export function getActivity(listId: Id, options: { taskId?: Id; limit?: number } = {}): Promise<Activity[]> {
+  const params = new URLSearchParams();
+  if (options.taskId !== undefined) params.set("task_id", String(options.taskId));
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  return request<Activity[]>(`/lists/${listId}/activity${qs ? `?${qs}` : ""}`);
 }
