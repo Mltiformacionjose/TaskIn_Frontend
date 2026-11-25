@@ -7,11 +7,12 @@ import { LoadState } from "@/components/ui/load-state";
 import { Panel } from "@/components/ui/panel";
 import { Segmented } from "@/components/ui/segmented";
 import { STATUS_ORDER, TASK_STATUS } from "@/features/tasks/status";
+import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { formatShortDate, todayIso } from "@/lib/dates";
 import { getStats } from "@/services/dashboard";
 import { getLists } from "@/services/lists";
-import type { MyTasksScope, Stats, TaskStatus, WeekStats } from "@/types/api";
+import type { ContributorStats, MyTasksScope, Stats, TaskStatus, WeekStats } from "@/types/api";
 
 type Period = "4" | "8" | "12" | "26" | "custom";
 
@@ -36,6 +37,8 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
 };
 const CREATED_COLOR = "var(--info)";
 const COMPLETED_COLOR = "var(--success)";
+const OPEN_COLOR = "var(--progress)";
+const ACTIONS_COLOR = "var(--muted)";
 
 function weeksAgo(weeks: number): string {
   const d = new Date();
@@ -139,6 +142,117 @@ function WeeklyChart({ weeks }: { weeks: WeekStats[] }) {
   );
 }
 
+/**
+ * RF-40: tareas pendientes al acabar cada semana (línea) y acciones del
+ * historial por semana (barras finas abajo). Los datos también van en una tabla.
+ */
+function EvolutionChart({ weeks }: { weeks: WeekStats[] }) {
+  const width = 640;
+  const height = 150;
+  const left = 24;
+  const top = 12;
+  const actionsHeight = 36;
+  const maxOpen = Math.max(1, ...weeks.map((w) => w.open));
+  const maxActions = Math.max(1, ...weeks.map((w) => w.actions));
+  const slot = (width - left) / Math.max(weeks.length, 1);
+  const every = Math.ceil(weeks.length / 9);
+  const x = (i: number) => left + i * slot + slot / 2;
+  const y = (open: number) => height - (open / maxOpen) * (height - top);
+  const points = weeks.map((w, i) => `${x(i)},${y(w.open)}`).join(" ");
+  const base = height + 24 + actionsHeight;
+  return (
+    <>
+      <svg viewBox={`0 0 ${width} ${base + 20}`} aria-hidden="true" className="h-auto w-full">
+        <line x1={left} x2={width} y1={top} y2={top} stroke="var(--line)" strokeDasharray="3 4" />
+        <text x={left - 6} y={top + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+          {maxOpen}
+        </text>
+        <text x={left - 6} y={height + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+          0
+        </text>
+        <line x1={left} x2={width} y1={height} y2={height} stroke="var(--line)" />
+        <polyline points={points} fill="none" stroke={OPEN_COLOR} strokeWidth="2.5" strokeLinejoin="round" />
+        {weeks.map((w, i) => {
+          const bar = (w.actions / maxActions) * actionsHeight;
+          return (
+            <g key={w.week_start}>
+              <circle cx={x(i)} cy={y(w.open)} r="4" fill={OPEN_COLOR}>
+                <title>{`Semana del ${formatShortDate(w.week_start)}: ${w.open} pendientes`}</title>
+              </circle>
+              <rect
+                x={x(i) - Math.min(8, slot * 0.2)}
+                y={base - bar}
+                width={Math.min(16, slot * 0.4)}
+                height={bar}
+                rx="2"
+                fill={ACTIONS_COLOR}
+                opacity="0.6"
+              >
+                <title>{`Semana del ${formatShortDate(w.week_start)}: ${w.actions} acciones`}</title>
+              </rect>
+              {i % every === 0 && (
+                <text x={x(i)} y={base + 16} textAnchor="middle" fontSize="11" fill="var(--muted)">
+                  {formatShortDate(w.week_start)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        <line x1={left} x2={width} y1={base} y2={base} stroke="var(--line)" />
+        <text x={left - 6} y={base - actionsHeight + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+          {maxActions}
+        </text>
+      </svg>
+      <table className="sr-only">
+        <caption>Tareas pendientes y acciones por semana</caption>
+        <thead>
+          <tr>
+            <th scope="col">Semana del</th>
+            <th scope="col">Pendientes al acabar</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {weeks.map((w) => (
+            <tr key={w.week_start}>
+              <th scope="row">{formatShortDate(w.week_start)}</th>
+              <td>{w.open}</td>
+              <td>{w.actions}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/** RF-40: quién ha hecho más en tus listas durante el periodo. */
+function Contributors({ people, currentUserId }: { people: ContributorStats[]; currentUserId: number }) {
+  if (people.length === 0) return <p className="text-sm text-muted">Nadie ha hecho cambios en el periodo.</p>;
+  const max = Math.max(...people.map((p) => p.actions));
+  return (
+    <ul className="flex flex-col gap-3">
+      {people.map((p) => (
+        <li key={p.user_id ?? "eliminado"}>
+          <div className="mb-1 flex justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate font-semibold">
+              {p.username ?? "Usuario eliminado"}
+              {p.user_id === currentUserId && <span className="font-normal text-muted"> (tú)</span>}
+            </span>
+            <span className="shrink-0 text-muted">
+              {p.actions} {p.actions === 1 ? "acción" : "acciones"} · {p.completed}{" "}
+              {p.completed === 1 ? "completada" : "completadas"}
+            </span>
+          </div>
+          <div className="h-2.5 rounded-full bg-chip" aria-hidden="true">
+            <div className="h-full rounded-full" style={{ width: `${(p.actions / max) * 100}%`, background: ACTIONS_COLOR }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function StatusBar({ stats }: { stats: Stats }) {
   const total = stats.status.total;
   if (total === 0) return <p className="text-sm text-muted">No hay tareas con estos filtros.</p>;
@@ -189,9 +303,11 @@ function ByList({ stats }: { stats: Stats }) {
 /**
  * RF-39: estadísticas del dashboard con periodo, lista y alcance: creadas y
  * completadas por semana, cumplimiento de las fechas límite, estado actual y
- * reparto por lista. Los datos los calcula la API (GET /dashboard/stats).
+ * reparto por lista. RF-40: evolución de las pendientes, actividad semanal y
+ * quién hace más en mis listas. Los datos los calcula la API (GET /dashboard/stats).
  */
 export function StatsScreen() {
+  const { user } = useSession();
   const [period, setPeriod] = useState<Period>("8");
   const [custom, setCustom] = useState({ start: weeksAgo(8), end: todayIso() });
   const [scope, setScope] = useState<MyTasksScope>("all");
@@ -305,6 +421,25 @@ export function StatsScreen() {
                   <ByList stats={data} />
                 </Panel>
               </div>
+            </div>
+            <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
+              <Panel
+                title="Pendientes y actividad"
+                description="Tareas sin terminar al acabar cada semana y cambios hechos en tus listas."
+                actions={
+                  <Legend
+                    items={[
+                      { label: "Pendientes", color: OPEN_COLOR },
+                      { label: "Acciones", color: ACTIONS_COLOR },
+                    ]}
+                  />
+                }
+              >
+                <EvolutionChart weeks={data.weeks} />
+              </Panel>
+              <Panel title="Quién hace más" description="Acciones en tus listas durante el periodo.">
+                <Contributors people={data.contributors} currentUserId={user.id} />
+              </Panel>
             </div>
           </>
         )}
