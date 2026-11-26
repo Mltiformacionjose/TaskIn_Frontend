@@ -1,0 +1,82 @@
+# Integración continua del frontend (mejora 2, 2026-11-26).
+# 1. checks: lint, tipos y compilación.
+# 2. e2e: las pruebas de Playwright contra el backend real, descargado de su
+#    repositorio (público) y con un PostgreSQL 18 temporal (base taskin_e2e).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  e2e:
+    needs: checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: taskin
+          POSTGRES_PASSWORD: taskin
+          POSTGRES_DB: taskin_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U taskin"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: "true"
+      BACKEND_DIR: ${{ github.workspace }}/backend
+      E2E_DATABASE_URL: postgresql+psycopg://taskin:taskin@localhost:5432/taskin_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar el backend
+        uses: actions/checkout@v4
+        with:
+          repository: Mltiformacionjose/Nexora_Backend
+          path: backend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Entorno del backend (.venv, como en local)
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt
+          echo "DATABASE_URL=$E2E_DATABASE_URL" > .env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Trazas de las pruebas que fallen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

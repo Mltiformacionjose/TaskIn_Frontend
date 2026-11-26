@@ -6,12 +6,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { LoadState } from "@/components/ui/load-state";
 import { Panel } from "@/components/ui/panel";
+import { useToast } from "@/components/ui/toast";
 import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { formatDate } from "@/lib/dates";
 import { ApiError } from "@/services/errors";
 import { getActivity, getList, getMembers } from "@/services/lists";
-import { deleteTask, getTask } from "@/services/tasks";
+import { deleteTask, getTask, restoreTask } from "@/services/tasks";
 import { ActivityList } from "@/features/lists/activity-panel";
 import type { Activity, ListMember, Task, TaskList } from "@/types/api";
 import { TaskForm } from "./task-form";
@@ -27,6 +28,7 @@ type Data = { list: TaskList; members: ListMember[]; task: Task; history: Activi
 export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: number }) {
   const { user } = useSession();
   const router = useRouter();
+  const toast = useToast();
   const { load, reload } = useLoad<Data>(
     () =>
       Promise.all([
@@ -81,6 +83,17 @@ export function EditTaskScreen({ listId, taskId }: { listId: number; taskId: num
                   onConfirm={async () => {
                     await deleteTask(task.id);
                     backToList();
+                    // Mejora 7: deshacer sin pasar por la papelera (RF-30).
+                    toast.show({
+                      message: `Tarea «${task.title}» enviada a la papelera.`,
+                      action: {
+                        label: "Deshacer",
+                        run: async () => {
+                          await restoreTask(task.id);
+                          router.push(`/lists/${list.id}/tasks/${task.id}`);
+                        },
+                      },
+                    });
                   }}
                 >
                   «{task.title}» irá a la papelera. Cualquier participante de la lista podrá recuperarla durante 30

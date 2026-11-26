@@ -157,11 +157,18 @@ export function DashboardScreen() {
       <LoadState load={load} loading="Cargando resumen…" onRetry={reload}>
         {({ dashboard, lists, dueSoonDays }) => (
           <div className="flex flex-col gap-5">
-            <section aria-label="Totales de mis tareas" className="grid gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard label="Por hacer" value={dashboard.assigned.todo} hint="Tareas pendientes" />
-              <StatCard label="En progreso" value={dashboard.assigned.in_progress} hint="Tareas en curso" />
-              <StatCard label="Hechas" value={dashboard.assigned.done} hint="Tareas completadas" />
-              <StatCard label="Vencidas" value={dashboard.overdue.length} hint="Requieren atención" tone="danger" />
+            {/* D-21: los totales cuentan lo que es mío (asignado o de mis listas personales), no lo que creé para otros. */}
+            <section aria-label="Totales de mis tareas" aria-describedby="totals-scope">
+              <div className="grid gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Por hacer" value={dashboard.assigned.todo} hint="Pendientes, asignadas a ti" />
+                <StatCard label="En progreso" value={dashboard.assigned.in_progress} hint="En curso, asignadas a ti" />
+                <StatCard label="Hechas" value={dashboard.assigned.done} hint="Completadas, asignadas a ti" />
+                <StatCard label="Vencidas" value={dashboard.overdue.length} hint="Asignadas a ti, sin terminar" tone="danger" />
+              </div>
+              <p id="totals-scope" className="mt-2.5 text-xs text-muted">
+                Cuentan las tareas asignadas a ti y las de tus listas personales. Las que creaste para otras personas
+                aparecen en «Mis tareas» con el filtro «Creadas por mí».
+              </p>
             </section>
 
             <MyTasksPanel onChanged={reload} />

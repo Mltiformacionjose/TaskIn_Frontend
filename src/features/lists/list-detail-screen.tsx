@@ -12,11 +12,12 @@ import { LoadState } from "@/components/ui/load-state";
 import { Panel } from "@/components/ui/panel";
 import { Pill } from "@/components/ui/pill";
 import { Segmented } from "@/components/ui/segmented";
+import { useToast } from "@/components/ui/toast";
 import { useSession } from "@/features/auth/session-provider";
 import { STATUS_ORDER, TASK_STATUS } from "@/features/tasks/status";
 import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
-import { deleteList, getList, getMembers, leaveList } from "@/services/lists";
+import { deleteList, getList, getMembers, leaveList, restoreList } from "@/services/lists";
 import { getTasks } from "@/services/tasks";
 import type { ListMember, Task, TaskList, TaskStatus } from "@/types/api";
 import { ActivityPanel } from "./activity-panel";
@@ -52,6 +53,7 @@ function Stat({ label, value, hint }: { label: string; value: number; hint: stri
 export function ListDetailScreen({ listId }: { listId: number }) {
   const { user } = useSession();
   const router = useRouter();
+  const toast = useToast();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [assignee, setAssignee] = useState<AssigneeFilter>("all");
   const [view, setView] = useState<TaskView>("list");
@@ -131,6 +133,17 @@ export function ListDetailScreen({ listId }: { listId: number }) {
                       onConfirm={async () => {
                         await deleteList(list.id);
                         router.push("/lists");
+                        // Mejora 7: deshacer sin pasar por la papelera (RF-18).
+                        toast.show({
+                          message: `Lista «${list.name}» enviada a la papelera.`,
+                          action: {
+                            label: "Deshacer",
+                            run: async () => {
+                              await restoreList(list.id);
+                              router.push(`/lists/${list.id}`);
+                            },
+                          },
+                        });
                       }}
                     >
                       «{list.name}» irá a la papelera con sus {plural(all.length, "tarea")}: nadie la verá, pero

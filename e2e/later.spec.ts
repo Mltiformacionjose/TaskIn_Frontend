@@ -67,6 +67,8 @@ test("una lista que exige fecha límite no deja crear tareas sin fecha", async (
   await page.getByLabel("Título *").fill("Memoria");
   await page.getByRole("button", { name: "Crear tarea" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Esta lista exige fecha límite en cada tarea." })).toBeVisible();
+  // La ayuda y el error decían lo mismo: ahora se ve una sola vez.
+  await expect(page.getByText("Esta lista exige fecha límite en cada tarea.")).toHaveCount(1);
 
   await page.getByLabel("Fecha de vencimiento *").fill(day(3));
   await page.getByRole("button", { name: "Crear tarea" }).click();

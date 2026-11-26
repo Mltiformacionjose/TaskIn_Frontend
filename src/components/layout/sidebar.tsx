@@ -43,7 +43,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
       </span>
       {item.label}
       {count > 0 && (
-        <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-on-accent">
+        <span className="ml-auto rounded-full bg-accent-strong px-2 py-0.5 text-xs font-bold text-on-accent">
           <span aria-hidden="true">{count}</span>
           <span className="sr-only">({count} sin revisar)</span>
         </span>

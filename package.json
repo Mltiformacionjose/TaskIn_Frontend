@@ -1,5 +1,5 @@
 {
-  "name": "nexona",
+  "name": "taskin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "smoke:api": "node scripts/api-smoke.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

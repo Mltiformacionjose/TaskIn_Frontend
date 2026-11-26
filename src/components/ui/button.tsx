@@ -8,7 +8,7 @@ const base =
   "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[9px] px-[17px] py-3 text-xs font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-on-accent hover:brightness-110",
+  primary: "bg-accent-strong text-on-accent hover:bg-accent-strong-hover",
   secondary: "border border-line bg-panel-2 text-fg hover:bg-line",
   ghost: "border border-line bg-transparent text-muted hover:text-fg",
   danger: "bg-danger-soft text-danger-text hover:brightness-125",

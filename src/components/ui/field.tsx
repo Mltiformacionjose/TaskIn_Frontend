@@ -28,6 +28,8 @@ function FieldFrame({
   className,
   children,
 }: FieldMeta & { id: string; className?: string; children: ReactNode }) {
+  // Si el error repite la ayuda (p. ej. «Esta lista exige fecha límite»), se muestra una sola vez.
+  const shownHint = visibleHint({ hint, error });
   return (
     <div className={cn("mb-[19px]", className)}>
       <label htmlFor={id} className="mb-2 flex justify-between text-sm font-semibold">
@@ -35,9 +37,9 @@ function FieldFrame({
         {optional && <span className="font-normal text-muted">Opcional</span>}
       </label>
       {children}
-      {hint && (
+      {shownHint && (
         <small id={`${id}-hint`} className="mt-[7px] block text-xs text-muted">
-          {hint}
+          {shownHint}
         </small>
       )}
       {error && (
@@ -49,8 +51,12 @@ function FieldFrame({
   );
 }
 
+function visibleHint({ hint, error }: Pick<FieldMeta, "hint" | "error">) {
+  return hint && hint !== error ? hint : undefined;
+}
+
 function describedBy(id: string, meta: Pick<FieldMeta, "hint" | "error">) {
-  const ids = [meta.hint && `${id}-hint`, meta.error && `${id}-error`].filter(Boolean);
+  const ids = [visibleHint(meta) && `${id}-hint`, meta.error && `${id}-error`].filter(Boolean);
   return ids.length ? ids.join(" ") : undefined;
 }
 

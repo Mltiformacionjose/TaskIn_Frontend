@@ -63,8 +63,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await logoutRequest();
-    router.replace("/login");
+    try {
+      await logoutRequest();
+    } finally {
+      // Aunque la petición falle (sesión ya caducada), se sale siempre a /login.
+      window.location.replace("/login");
+    }
   };
 
   return <SessionContext.Provider value={{ user, logout, setUser }}>{children}</SessionContext.Provider>;

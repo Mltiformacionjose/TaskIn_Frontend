@@ -11,6 +11,18 @@ function isApiErrorBody(value: unknown): value is ApiErrorBody {
   return typeof value === "object" && value !== null && "error" in value;
 }
 
+/** Un 401 fuera de /auth/* y sin campo de formulario implicado es una sesión caducada o cerrada. */
+function isSessionExpired(path: string, data: unknown): boolean {
+  if (path.startsWith("/auth/")) return false;
+  return !(isApiErrorBody(data) && data.error.fields?.length);
+}
+
+/** Navegación completa (no `router`) para descartar el estado de la sesión anterior. */
+function redirectToLogin(): void {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname !== "/login") window.location.replace("/login");
+}
+
 /**
  * Única función que habla con la API real.
  * La sesión viaja en una cookie HttpOnly del backend (`credentials: "include"`);
@@ -33,6 +45,7 @@ export async function request<T>(path: string, { method = "GET", body }: Request
 
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401 && isSessionExpired(path, data)) redirectToLogin();
     if (isApiErrorBody(data)) {
       const { code, message, fields } = data.error;
       throw new ApiError(response.status, code, message, fields);

@@ -23,7 +23,13 @@
   --accent-tint: #361c14;
   --accent-text: #ff8a5c;
   --accent-border: #833820;
-  /* Texto sobre el acento. Crema sobre naranja da 3,55:1 (I-28, aceptado). */
+  /*
+   * Fondo de lo que lleva texto encima (botón primario, contadores): el mismo
+   * naranja, más oscuro, para llegar a WCAG AA. Crema sobre #ea5729 daba 3,55:1
+   * (I-28); sobre #cc4114 da 4,83:1 y sobre el estado «hover» (#b93a12), 5,7:1.
+   */
+  --accent-strong: #cc4114;
+  --accent-strong-hover: #b93a12;
   --on-accent: #fffffb;
   /* Resplandor del fondo de las pantallas de acceso. */
   --glow: #2a1710;
@@ -54,6 +60,8 @@
   --color-accent-tint: var(--accent-tint);
   --color-accent-text: var(--accent-text);
   --color-accent-border: var(--accent-border);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-strong-hover: var(--accent-strong-hover);
   --color-on-accent: var(--on-accent);
 
   --color-info: var(--info);

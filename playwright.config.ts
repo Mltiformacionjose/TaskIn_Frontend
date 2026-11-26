@@ -22,7 +22,7 @@ const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3100);
 const API_PORT = Number(process.env.E2E_API_PORT ?? 8100);
 const WEB_URL = `http://localhost:${WEB_PORT}`;
 const API_URL = `http://localhost:${API_PORT}/api/v1`;
-const BACKEND_DIR = path.resolve(process.env.BACKEND_DIR ?? path.join(__dirname, "..", "Nexora_Backend"));
+const BACKEND_DIR = path.resolve(process.env.BACKEND_DIR ?? path.join(__dirname, "..", "TaskIn_Backend"));
 const PYTHON = path.join(BACKEND_DIR, ".venv", process.platform === "win32" ? "Scripts" : "bin", "python");
 
 /** DATABASE_URL del `.env` del backend con la base cambiada a `taskin_e2e`. */
