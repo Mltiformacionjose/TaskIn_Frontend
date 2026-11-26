@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "smoke:api": "node scripts/api-smoke.mjs",
     "demo:seed": "node scripts/demo-seed.mjs",
     "test:e2e": "playwright test"
