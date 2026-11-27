@@ -83,7 +83,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               hovered.current = false;
             }}
             className={
-              "pointer-events-auto flex w-full max-w-[460px] items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-[0_22px_75px_#0008] " +
+              "pointer-events-auto flex w-full max-w-[460px] items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-[0_22px_75px_var(--shadow)] " +
               (toast.tone === "danger" ? "border-danger/40 bg-danger-soft text-danger-text" : "border-line bg-panel-2 text-fg")
             }
           >

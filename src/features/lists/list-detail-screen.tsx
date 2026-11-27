@@ -14,6 +14,7 @@ import { Pill } from "@/components/ui/pill";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { useSession } from "@/features/auth/session-provider";
+import { ExportCalendarButton } from "@/features/tasks/export-calendar-button";
 import { STATUS_ORDER, TASK_STATUS } from "@/features/tasks/status";
 import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
 import { useLoad } from "@/hooks/use-load";
@@ -170,7 +171,16 @@ export function ListDetailScreen({ listId }: { listId: number }) {
               <Panel
                 title="Tareas"
                 description="Ordenadas por fecha de vencimiento; las que no tienen fecha, al final."
-                actions={<ButtonLink href={`/lists/${list.id}/tasks/new`}>＋ Nueva tarea</ButtonLink>}
+                actions={
+                  <div className="flex flex-wrap justify-end gap-2.5">
+                    <ExportCalendarButton
+                      calendarName={`TaskIn · ${list.name}`}
+                      filename={`taskin-lista-${list.id}.ics`}
+                      loadTasks={() => getTasks(list.id).then((ts) => ts.map((t) => ({ ...t, list_name: list.name })))}
+                    />
+                    <ButtonLink href={`/lists/${list.id}/tasks/new`}>＋ Nueva tarea</ButtonLink>
+                  </div>
+                }
               >
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <Segmented label="Vista de las tareas" value={view} onChange={setView} options={VIEW_OPTIONS} />

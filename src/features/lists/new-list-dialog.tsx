@@ -137,7 +137,7 @@ export function NewListDialog({ onCreated }: { onCreated: (list: TaskList) => vo
       <dialog
         ref={dialogRef}
         aria-labelledby="new-list-title"
-        className="m-auto w-[min(480px,calc(100%-32px))] rounded-[17px] border border-line bg-panel p-[30px] text-fg shadow-[0_22px_75px_#0008] backdrop:bg-black/60"
+        className="m-auto w-[min(480px,calc(100%-32px))] rounded-[17px] border border-line bg-panel p-[30px] text-fg shadow-[0_22px_75px_var(--shadow)] backdrop:bg-black/60"
       >
         <h2 id="new-list-title" className="mb-1.5 text-xl font-bold">
           Nueva lista

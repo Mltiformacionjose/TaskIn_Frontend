@@ -4,6 +4,11 @@ import { EditTaskScreen } from "@/features/tasks/edit-task-screen";
 
 export const metadata: Metadata = { title: "Editar tarea · TaskIn" };
 
+// La sesión se comprueba en el navegador (SessionProvider, ADR-0008): el servidor no pinta esta
+// página, así que Next.js no puede validar su navegación instantánea. Se excluye a propósito.
+// Ponerlo en el layout de (private) no basta: la exclusión no se hereda a las páginas.
+export const instant = false;
+
 /** WF-004 Editar tarea. */
 export default function EditTaskPage({ params }: PageProps<"/lists/[listId]/tasks/[taskId]">) {
   // Con Cache Components los parámetros son datos de la petición: se leen dentro de Suspense.

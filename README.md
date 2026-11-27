@@ -2,7 +2,7 @@
 
 TaskIn es una aplicación web de gestión de tareas y listas personales y compartidas: permite crear y organizar tareas, compartir listas con otras personas, recibir avisos y ver un resumen del trabajo. Este repositorio contiene el **frontend**, la interfaz de usuario. El backend vive en otro repositorio.
 
-> **Estado real (2026-11-26):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Deseables hechos: vistas Lista, Calendario y Kanban (WF-011, WF-012) en el detalle de lista y en el panel «Mis tareas» del dashboard, filtro por responsable, editar y compartir listas, abandonar y transferir listas, cambiar usuario, correo y contraseña, aviso de edición simultánea, verificación del correo, estadísticas con gráficos y evolución (`/stats`), historial de actividad, papelera (`/trash`), fecha límite obligatoria por lista, antelación de «próximas» y eliminar la cuenta. Mejoras del 2026-11-26: «Deshacer» al eliminar una tarea o una lista, páginas de error y 404 propias, botón primario con contraste AA, cabeceras de seguridad (CSP), datos de demostración e integración continua. Pruebas de extremo a extremo con Playwright: 60 en verde.
+> **Estado real (2026-11-26):** el frontend está **conectado a la API real** y cubre todas las pantallas imprescindibles del MVP: inicio de sesión, registro y recuperación de contraseña (WF-007 a WF-009, más `/reset-password`), dashboard (WF-001), mis listas (WF-002), detalle de lista (WF-003), crear y editar tarea (WF-004), participantes (WF-005), notificaciones (WF-006), ajustes (WF-010) e invitaciones recibidas (WF-013). Deseables hechos: vistas Lista, Calendario y Kanban (WF-011, WF-012) en el detalle de lista y en el panel «Mis tareas» del dashboard, filtro por responsable, editar y compartir listas, abandonar y transferir listas, cambiar usuario, correo y contraseña, aviso de edición simultánea, verificación del correo, estadísticas con gráficos y evolución (`/stats`), historial de actividad, papelera (`/trash`), fecha límite obligatoria por lista, antelación de «próximas» y eliminar la cuenta. Mejoras del 2026-11-26: «Deshacer» al eliminar una tarea o una lista, páginas de error y 404 propias, botón primario con contraste AA, cabeceras de seguridad (CSP), datos de demostración e integración continua; también exportar a calendario (`.ics`), atajos de teclado (pulsa `?`), modo claro (Ajustes → Apariencia) y aplicación instalable (manifiesto e iconos). Pruebas de extremo a extremo con Playwright: 65 en verde.
 
 ## Probar las pantallas
 
@@ -61,7 +61,7 @@ npm run demo:seed   # datos de demostración: ana, bruno y carla (requiere backe
 npm run test:e2e    # pruebas de extremo a extremo con Playwright
 ```
 
-A 2026-11-26 pasan lint, tipos, build y las 60 pruebas E2E. GitHub Actions (`.github/workflows/ci.yml`) las repite en cada cambio: lint, tipos y build, y después las E2E contra el backend descargado de su repositorio y un PostgreSQL 18 temporal.
+A 2026-11-26 pasan lint, tipos, build y las 65 pruebas E2E. GitHub Actions (`.github/workflows/ci.yml`) las repite en cada cambio: lint, tipos y build, y después las E2E contra el backend descargado de su repositorio y un PostgreSQL 18 temporal.
 
 ### Pruebas de extremo a extremo (Playwright)
 

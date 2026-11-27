@@ -10,6 +10,7 @@ import { Panel } from "@/components/ui/panel";
 import { Pill } from "@/components/ui/pill";
 import { Segmented } from "@/components/ui/segmented";
 import { useSession } from "@/features/auth/session-provider";
+import { ExportCalendarButton } from "@/features/tasks/export-calendar-button";
 import { LIST_TYPE_LABEL, plural } from "@/features/lists/list-summary";
 import { TASK_STATUS } from "@/features/tasks/status";
 import { TaskViews, VIEW_OPTIONS, type TaskView } from "@/features/tasks/task-views";
@@ -87,7 +88,17 @@ function MyTasksPanel({ onChanged }: { onChanged: () => void }) {
   const { load, reload } = useLoad(() => getMyTasks(scope), scope);
 
   return (
-    <Panel title="Mis tareas" description="Consulta lo que has creado y lo que tienes asignado.">
+    <Panel
+      title="Mis tareas"
+      description="Consulta lo que has creado y lo que tienes asignado."
+      actions={
+        <ExportCalendarButton
+          calendarName="TaskIn · Mis tareas"
+          filename="taskin-mis-tareas.ics"
+          loadTasks={() => getMyTasks(scope)}
+        />
+      }
+    >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segmented label="Vista de mis tareas" value={view} onChange={setView} options={VIEW_OPTIONS} />
         <Segmented

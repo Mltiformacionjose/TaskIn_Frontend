@@ -2,10 +2,13 @@
 
 /*
  * Tokens de diseño de TaskIn, tomados del prototipo (prototype.html, NEX-DOC-007 §2.1, P-27).
- * Colores de Factoría F5: naranja #ea5729 y crema #fffffb. Tema único: oscuro con acento naranja.
- * El modo claro está por decidir (P-28).
+ * Colores de Factoría F5: naranja #ea5729 y crema #fffffb.
+ * Dos temas (mejora 12, P-28): oscuro (por defecto, el del prototipo) y claro. El script de
+ * app/layout.tsx pone data-theme en <html> antes de pintar, según la preferencia guardada
+ * (Ajustes → Apariencia) o la del sistema. Todos los pares de texto y fondo cumplen WCAG AA.
  */
-:root {
+:root,
+[data-theme="dark"] {
   color-scheme: dark;
 
   --canvas: #141110;
@@ -42,6 +45,47 @@
   --danger: #e46d75;
   --danger-soft: #48252d;
   --danger-text: #ffc1c6;
+  /* Sombra de diálogos, tarjetas de acceso y avisos flotantes. */
+  --shadow: #0008;
+}
+
+/*
+ * Tema claro (P-28): el crema #fffffb pasa a ser el fondo de los paneles y el naranja se
+ * oscurece donde es texto (--accent-text #ad3610, 6,3:1 sobre crema). Contrastes medidos el
+ * 2026-11-26: texto 16,6:1 o más; texto secundario 5,3:1 o más; avisos y errores 5,6:1 o más.
+ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas: #f5f0eb;
+  --sidebar: #ede6e0;
+  --panel: #fffffb;
+  --panel-2: #f7f2ed;
+  --line: #ddd3cb;
+  --chip: #ece4dd;
+
+  --fg: #141110;
+  --muted: #665a55;
+
+  --accent: #ea5729;
+  --accent-soft: #f7d3c4;
+  --accent-tint: #fce9e0;
+  --accent-text: #ad3610;
+  --accent-border: #eea383;
+  --accent-strong: #cc4114;
+  --accent-strong-hover: #b93a12;
+  --on-accent: #fffffb;
+  --glow: #fbe1d3;
+
+  --info: #2f6eb5;
+  --success: #1d8458;
+  --progress: #a86410;
+  --warning: #7d5800;
+  --warning-soft: #faefcf;
+  --danger: #c23a49;
+  --danger-soft: #fbe0e3;
+  --danger-text: #9a1b2a;
+  --shadow: #2b1d162e;
 }
 
 @theme inline {

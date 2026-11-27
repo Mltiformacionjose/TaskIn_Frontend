@@ -65,7 +65,7 @@ export function ConfirmButton({
       <dialog
         ref={dialogRef}
         aria-labelledby={titleId}
-        className="m-auto w-[min(440px,calc(100%-32px))] rounded-[17px] border border-line bg-panel p-[30px] text-fg shadow-[0_22px_75px_#0008] backdrop:bg-black/60"
+        className="m-auto w-[min(440px,calc(100%-32px))] rounded-[17px] border border-line bg-panel p-[30px] text-fg shadow-[0_22px_75px_var(--shadow)] backdrop:bg-black/60"
       >
         <h2 id={titleId} className="mb-3 text-xl font-bold">
           {title}

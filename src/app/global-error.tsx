@@ -1,5 +1,6 @@
 "use client"; // Los límites de error son componentes de cliente.
 
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 /**
@@ -8,7 +9,10 @@ import "./globals.css";
  */
 export default function GlobalError({ retry }: { error: unknown; retry: () => void }) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es" data-theme="dark" suppressHydrationWarning className="h-full antialiased">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="grid min-h-screen place-items-center bg-canvas px-4">
         <title>Algo ha fallado · TaskIn</title>
         <div className="w-full max-w-[440px] rounded-[17px] border border-line bg-panel p-[38px]">

@@ -6,9 +6,11 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoadState } from "@/components/ui/load-state";
 import { Panel } from "@/components/ui/panel";
+import { Segmented } from "@/components/ui/segmented";
 import { useSession } from "@/features/auth/session-provider";
 import { useLoad } from "@/hooks/use-load";
 import { cn } from "@/lib/cn";
+import { readThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme";
 import { getSettings, updateSettings } from "@/services/auth";
 import { DeleteAccountForm, PasswordForm, ProfileForm } from "./account-forms";
 import { errorMessage } from "@/services/errors";
@@ -130,6 +132,32 @@ function DueSoonSetting({ initial }: { initial: Settings }) {
   );
 }
 
+const THEME_OPTIONS: { value: ThemePreference; label: string; glyph: string }[] = [
+  { value: "system", label: "Sistema", glyph: "◐" },
+  { value: "light", label: "Claro", glyph: "☀" },
+  { value: "dark", label: "Oscuro", glyph: "☾" },
+];
+
+/** Mejora 12 (P-28): tema claro u oscuro, o el del sistema. Se guarda en este navegador. */
+function AppearanceSetting() {
+  const [theme, setTheme] = useState<ThemePreference>(readThemePreference);
+  const change = (next: ThemePreference) => {
+    setTheme(next);
+    saveThemePreference(next);
+  };
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+      <div className="min-w-0 flex-1 basis-60">
+        <p className="text-sm font-semibold">Tema</p>
+        <p className="mt-1 text-xs leading-normal text-muted">
+          «Sistema» sigue el modo claro u oscuro de tu dispositivo. Se guarda en este navegador.
+        </p>
+      </div>
+      <Segmented label="Tema" options={THEME_OPTIONS} value={theme} onChange={change} />
+    </div>
+  );
+}
+
 /** WF-010 Ajustes (RF-02, RF-04, RF-05, RF-07, RF-27, RF-36): avisos, vencimientos, cuenta, contraseña, sesión y baja. */
 export function SettingsScreen() {
   const { logout } = useSession();
@@ -148,6 +176,9 @@ export function SettingsScreen() {
               </>
             )}
           </LoadState>
+        </Panel>
+        <Panel title="Apariencia" description="Elige cómo se ve TaskIn.">
+          <AppearanceSetting />
         </Panel>
         <Panel title="Cuenta" description="Tu nombre de usuario y el correo con el que entras.">
           <ProfileForm />

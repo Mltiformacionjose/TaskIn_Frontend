@@ -30,13 +30,17 @@ function e2eDatabaseUrl(): string | undefined {
   if (process.env.E2E_DATABASE_URL) return process.env.E2E_DATABASE_URL;
   try {
     const env = fs.readFileSync(path.join(BACKEND_DIR, ".env"), "utf-8");
-    const devUrl = env.match(/^DATABASE_URL=(.+)$/m)?.[1].trim();
+    // `neon env pull` escribe el valor entre comillas: se quitan.
+    const devUrl = env.match(/^DATABASE_URL=(.+)$/m)?.[1].trim().replace(/^(["'])(.*)\1$/, "$2");
     return devUrl?.replace(/\/[^/?]+(\?.*)?$/, "/taskin_e2e$1");
   } catch {
     return undefined;
   }
 }
 const E2E_DATABASE_URL = e2eDatabaseUrl();
+// Con Neon, las migraciones usan DATABASE_URL_UNPOOLED (conexión directa). En
+// las pruebas tiene que ser la de la base de pruebas, nunca la del `.env`.
+const E2E_DATABASE_URL_UNPOOLED = process.env.E2E_DATABASE_URL_UNPOOLED ?? E2E_DATABASE_URL;
 
 process.env.E2E_API_URL = API_URL;
 process.env.E2E_WEB_URL = WEB_URL;
@@ -65,6 +69,7 @@ export default defineConfig({
       env: {
         FRONTEND_ORIGIN: WEB_URL,
         ...(E2E_DATABASE_URL ? { DATABASE_URL: E2E_DATABASE_URL } : {}),
+        ...(E2E_DATABASE_URL_UNPOOLED ? { DATABASE_URL_UNPOOLED: E2E_DATABASE_URL_UNPOOLED } : {}),
       },
     },
     {

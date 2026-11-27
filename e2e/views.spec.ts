@@ -28,7 +28,7 @@ test("calendario: cada tarea en su día, las sin fecha debajo y navegación por 
   await addTask(page, listId, "Entrega parcial", { due_date: thisMonth(15) });
   await addTask(page, listId, "Idea sin fecha");
   await page.goto(`/lists/${listId}`);
-  await page.getByRole("button", { name: "Calendario" }).click();
+  await page.getByRole("button", { name: "Calendario", exact: true }).click();
 
   const now = new Date();
   const title = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
